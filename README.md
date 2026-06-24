@@ -20,7 +20,8 @@
 
 ```bash
 # Run everything at once:
-python3 run_full_suite.py
+python3 Large_Scale_Run_Script.py
+
 
 # Or run individual pieces:
 python3 test_qeqske.py
@@ -40,7 +41,7 @@ This makes 50 API calls (1024 numbers each = 51,200 total) and saves them to one
 Then update the scripts to load from `qrng_dataset.txt` instead of `sample_qrng_batch.txt`
 for more statistically robust results.
 
-## How To Explain Results To Rajib
+## How To Explain Results 
 
 ### 1. QEQSKE Implementation — "Does it work?"
 > "We implemented Algorithms 1-10 from the HCL paper in Python. Alice generates keys,
