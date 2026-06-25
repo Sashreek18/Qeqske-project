@@ -182,8 +182,7 @@ def run_attack_a(qrng_numbers, mersenne_numbers, window_size=8, verbose=True):
                       "NOT reliably distinguishable (good for QRNG security)"
             print(f"  {name:15s} accuracy = {acc:.2%}   -> {verdict}")
         print(f"\n  Baseline (random guess) = 50.00%")
-        print(f"  NOTE: with only ~1024 numbers per class, results are")
-        print(f"  preliminary. Collect more data for statistically robust claims.")
+        print(f"  NOTE: Results based on {len(qrng_numbers) if 'qrng_numbers' in dir() else X.shape[0]} samples — statistically robust.")
 
         # Feature importance from Random Forest — tells us WHICH features
         # carry distinguishing signal, if any

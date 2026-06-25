@@ -15,9 +15,10 @@ Uses qrng_large_dataset.txt (95,232 real quantum numbers)
 import warnings
 warnings.filterwarnings("ignore")
 
-LARGE_DATASET   = "qrng_large_dataset.txt"
-SMALL_DATASET   = "sample_qrng_batch.txt"
-MERSENNE_SIZE   = 95232
+LARGE_DATASET   = "qrng_combined.txt"   # changed
+MERSENNE_SIZE   = 197632                 # changed
+
+SMALL_DATASET   = "qrng_large_dataset.txt"
 
 
 def load_numbers(filepath):
