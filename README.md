@@ -28,7 +28,13 @@ We implemented the QEQSKE algorithm from the HCL paper and ran ML-based attacks 
 | `statistical_tests.py` | NIST-style statistical randomness tests |
 | `attack_a_distinguisher.py` | **Attack A**: ML classifier (Random Forest + SVM) |
 | `attack_b_entropy_leakage.py` | **Attack B**: Autoencoder-based entropy leakage detection |
+<<<<<<< Updated upstream
 | `attack_c_timing_groundwork.py` | **Attack C groundwork**: Timing side-channel measurements |
+=======
+| `attack_c_timing_groundwork.py` | **Attack C (Time)**: Timing side-channel measurements |
+| `attack_c_ram_sidechannel.py` | **Attack C (RAM)**: Memory allocation side-channel (tracemalloc) |
+| `attack_c_cache_sidechannel.py` | **Attack C (Cache/Power proxy)**: CPU-time side-channel (psutil) |
+>>>>>>> Stashed changes
 | `Large_Scale_Run_Script.py` | ✅ Main script — runs all 5 steps with 1,97,632 numbers |
 
 ---
@@ -45,6 +51,8 @@ python3 statistical_tests.py
 python3 attack_a_distinguisher.py
 python3 attack_b_entropy_leakage.py
 python3 attack_c_timing_groundwork.py
+python3 attack_c_ram_sidechannel.py
+python3 attack_c_cache_sidechannel.py
 ```
 
 ---
@@ -86,6 +94,7 @@ python3 attack_c_timing_groundwork.py
 
 > Ratio ~1.0 means QRNG behaves like ideal randomness — **no entropy leakage detected**
 
+<<<<<<< Updated upstream
 ### Step 5 — Attack C: Timing Side-Channel ✅
 | Metric | Value |
 |---|---|
@@ -94,6 +103,28 @@ python3 attack_c_timing_groundwork.py
 | Correlation with secret key | 0.2184 |
 
 > Weak/no correlation — **no timing side-channel found at software level**
+=======
+### Step 5 — Attack C: Side-Channel Analysis (Time + RAM + Cache/Power) ✅
+Per Rajib's instruction, Attack C covers three legs, since real hardware power/cache
+counters aren't available — RAM and Cache/Power are approximated with software proxies
+(`tracemalloc` and `psutil` respectively).
+
+| Leg | Proxy Tool | Trials | Correlation w/ secret key | Verdict |
+|---|---|---|---|---|
+| Time | `time.perf_counter` | 50 | 0.2184 | Weak/none |
+| RAM — key_gen() | `tracemalloc` | 150 | -0.0512 | Weak/none |
+| RAM — encrypt_it() | `tracemalloc` | 150 | -0.0082 | Weak/none |
+| Cache/Power — key_gen() | `psutil` (CPU time) | 19 | -0.1083 | Weak/none |
+| Cache/Power — encrypt_it() | `psutil` (CPU time) | 24 | 0.1435 | Weak/none |
+
+> All three side-channel legs converge to weak/no correlation at scale — same
+> stabilization pattern seen in Attack A/B as sample size grows. No exploitable
+> software-level side-channel found.
+> Note: at low trial counts (~5-20), some legs briefly showed a "meaningful"
+> correlation (>0.3) that vanished once trials were scaled up — consistent with
+> earlier findings that small-sample correlations here are statistical noise, not
+> real signal.
+>>>>>>> Stashed changes
 
 ---
 
@@ -144,7 +175,13 @@ print(f'Combined total: {len(all_numbers)} numbers')
 | Attack A — ML Distinguisher | ✅ Complete |
 | Attack B — Entropy Leakage | ✅ Complete |
 | Attack C — Software Timing | ✅ Complete |
+<<<<<<< Updated upstream
 | Attack C — Hardware (power/cache traces) | ⏳ Pending HCL |
+=======
+| Attack C — Software RAM (tracemalloc) | ✅ Complete |
+| Attack C — Software Cache/Power proxy (psutil) | ✅ Complete |
+| Attack C — Real hardware (power/cache traces) | ⏳ Pending HCL |
+>>>>>>> Stashed changes
 | Attack D — Fault Injection | ⏳ Next to build |
 | Defense Mechanisms | ⏳ After A/B/C/D |
 | Scale to real Kyber n=256 | ⏳ Needs more QRNG data |
@@ -154,9 +191,16 @@ print(f'Combined total: {len(all_numbers)} numbers')
 ## Key Finding So Far
 
 > **QEQSKE's QRNG component shows strong resistance to all ML-based attacks at the software level.**
+<<<<<<< Updated upstream
 > Statistical tests, ML distinguishers, autoencoder leakage detection, and timing analysis
 > all fail to find exploitable patterns — confirming that HCL's implementation behaves
 > like ideal randomness. The remaining open question is hardware-level side channels
+=======
+> Statistical tests, ML distinguishers, autoencoder leakage detection, and a full
+> 3-leg side-channel analysis (timing, memory, and CPU/cache-proxy) all fail to find
+> exploitable patterns — confirming that HCL's implementation behaves like ideal
+> randomness. The remaining open question is real hardware-level side channels
+>>>>>>> Stashed changes
 > (power, cache traces) which require physical measurement equipment.
 
 ---
@@ -164,5 +208,11 @@ print(f'Combined total: {len(all_numbers)} numbers')
 ## Limitations
 
 - **Parameters**: We used n=4, k=2 (toy size) — real Kyber uses n=256+. Scale up once more QRNG data is available.
+<<<<<<< Updated upstream
 - **Hardware side-channels**: Power consumption and cache traces need actual hardware — pending HCL access.
 - **Attack D**: Fault injection not yet implemented.
+=======
+- **Hardware side-channels**: Real power consumption and cache-hit/miss traces need actual hardware — pending HCL access. Our RAM/Cache legs are software proxies (tracemalloc, psutil), not direct hardware measurements.
+- **Attack C — Cache/Power trial count**: only reached 19-24 trials (not 150) because each trial's internal repeat-loop consumes QRNG numbers fast; correlation had already dropped near zero by then, but more trials would strengthen confidence.
+- **Attack D**: Fault injection not yet implemented.
+>>>>>>> Stashed changes
