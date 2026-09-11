@@ -46,7 +46,7 @@ import os
 import numpy as np
 import psutil
 from scipy import stats
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold, cross_validate
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
@@ -152,8 +152,10 @@ def report_feature_significance(rows):
             r, p = stats.pearsonr(vals, weights)
         else:
             r, p = 0.0, 1.0
-        sig = "SIGNIFICANT (p<0.05)" if p < 0.05 else "not significant"
+        sig = "SIGNIFICANT (p<0.0125)" if p < 0.0125 else "not significant (Bonferroni)"
         print(f"  {feat:<18}{r:>12.4f}{p:>12.4f}  {sig}")
+        if p < 0.0125 and abs(r) > 0 and abs(r) < 0.15:
+            print(f"    (Note: r = {r:.4f} means under {(r**2)*100:.2f}% of variance explained; detectable but practically useless)")
 
 
 # ---------------------------------------------------------------------------
@@ -168,13 +170,11 @@ def run_ml_attack(rows, verbose=True):
     median_w = np.median(weights)
     y = (weights > median_w).astype(int)  # binary label: above/below median weight
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=42, stratify=y
-    )
-
+    from sklearn.pipeline import make_pipeline
+    
+    # We still keep a scaler for the full-dataset feature importances
     scaler = StandardScaler()
-    X_train_s = scaler.fit_transform(X_train)
-    X_test_s = scaler.transform(X_test)
+    X_s = scaler.fit_transform(X)
 
     models = {
         "Logistic Regression": LogisticRegression(max_iter=1000),
@@ -183,34 +183,34 @@ def run_ml_attack(rows, verbose=True):
         "Neural Network (MLP)": MLPClassifier(hidden_layer_sizes=(16, 8), max_iter=2000, random_state=42),
     }
 
-    baseline_acc = max(np.mean(y_test == 0), np.mean(y_test == 1))  # majority-class guess
+    baseline_acc = max(np.mean(y == 0), np.mean(y == 1))  # majority-class guess
 
     print(f"\n{'=' * 68}")
     print(f"Combined ML Attack — predicting above/below-median secret weight")
     print(f"{'=' * 68}")
-    print(f"  Dataset: {len(rows)} trials -> {len(X_train)} train / {len(X_test)} test")
+    print(f"  Dataset: {len(rows)} trials -> Repeated Cross-Validation (5 splits, 10 repeats)")
     print(f"  Features: timing_us, cpu_user_us, ram_peak_bytes, num_allocations")
     print(f"  Random/majority-class baseline accuracy = {baseline_acc*100:.2f}%")
 
     results = {}
     print(f"\n  {'Model':<24}{'Accuracy':>10}{'Precision':>11}{'Recall':>9}{'F1':>8}")
-    for name, model in models.items():
-        model.fit(X_train_s, y_train)
-        preds = model.predict(X_test_s)
-        acc = accuracy_score(y_test, preds)
-        prec = precision_score(y_test, preds, zero_division=0)
-        rec = recall_score(y_test, preds, zero_division=0)
-        f1 = f1_score(y_test, preds, zero_division=0)
-        results[name] = {"accuracy": acc, "precision": prec, "recall": rec, "f1": f1,
-                          "confusion_matrix": confusion_matrix(y_test, preds)}
+    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)
+    
+    for name, clf in models.items():
+        model = make_pipeline(StandardScaler(), clf)
+        cv_results = cross_validate(model, X, y, cv=rskf, scoring=("accuracy", "precision", "recall", "f1"))
+        acc = cv_results['test_accuracy'].mean()
+        prec = cv_results['test_precision'].mean()
+        rec = cv_results['test_recall'].mean()
+        f1 = cv_results['test_f1'].mean()
+        
+        results[name] = {"accuracy": acc, "precision": prec, "recall": rec, "f1": f1}
         print(f"  {name:<24}{acc*100:>9.2f}%{prec*100:>10.2f}%{rec*100:>8.2f}%{f1*100:>7.2f}%")
 
     if verbose:
-        print(f"\n  Confusion matrices (rows=actual, cols=predicted, [below-median, above-median]):")
-        for name, r in results.items():
-            print(f"    {name}:\n{r['confusion_matrix']}")
-
+        # Fit Random Forest on full dataset to extract overall feature importances
         rf = models["Random Forest"]
+        rf.fit(X_s, y)
         importances = rf.feature_importances_
         feat_names = ["timing_us", "cpu_user_us", "ram_peak_bytes", "num_allocations"]
         print(f"\n  Random Forest feature importance (which signal matters most):")

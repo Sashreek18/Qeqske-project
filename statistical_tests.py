@@ -187,10 +187,10 @@ def run_all_tests(numbers, label="Dataset"):
 
 if __name__ == "__main__":
     # Quick self-test with your real QRNG data
-    with open("sample_qrng_batch.txt") as f:
+    with open("qrng_combined.txt") as f:
         qrng_numbers = [int(x.strip()) for x in f.read().strip().split(",") if x.strip()]
 
-    with open("mersenne_baseline.txt") as f:
+    with open("mersenne_large_baseline.txt") as f:
         mersenne_numbers = [int(x.strip()) for x in f.read().strip().split(",") if x.strip()]
 
     run_all_tests(qrng_numbers, label="Your Real QRNG Data (ANU)")

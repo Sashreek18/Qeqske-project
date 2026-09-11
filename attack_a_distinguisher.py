@@ -182,7 +182,7 @@ def run_attack_a(qrng_numbers, mersenne_numbers, window_size=8, verbose=True):
                       "NOT reliably distinguishable (good for QRNG security)"
             print(f"  {name:15s} accuracy = {acc:.2%}   -> {verdict}")
         print(f"\n  Baseline (random guess) = 50.00%")
-        print(f"  NOTE: Results based on {len(qrng_numbers) if 'qrng_numbers' in dir() else X.shape[0]} samples — statistically robust.")
+        print(f"  NOTE: Results based on {X.shape[0]} samples — statistically robust.")
 
         # Feature importance from Random Forest — tells us WHICH features
         # carry distinguishing signal, if any
@@ -196,10 +196,10 @@ def run_attack_a(qrng_numbers, mersenne_numbers, window_size=8, verbose=True):
 
 
 if __name__ == "__main__":
-    with open("sample_qrng_batch.txt") as f:
+    with open("qrng_combined.txt") as f:
         qrng_numbers = [int(x.strip()) for x in f.read().strip().split(",") if x.strip()]
 
-    with open("mersenne_baseline.txt") as f:
+    with open("mersenne_large_baseline.txt") as f:
         mersenne_numbers = [int(x.strip()) for x in f.read().strip().split(",") if x.strip()]
 
     run_attack_a(qrng_numbers, mersenne_numbers, window_size=8)

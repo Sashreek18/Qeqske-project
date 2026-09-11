@@ -96,8 +96,10 @@ def compare_distributions(qrng_rows, mt_rows):
         a = [r[field] for r in qrng_rows]
         b = [r[field] for r in mt_rows]
         ks_stat, p_val = stats.ks_2samp(a, b)
-        sig = "DIFFERENT dist." if p_val < 0.05 else "same distribution"
+        sig = "DIFFERENT dist." if p_val < 0.05 / 5 else "same distribution"
+        
         print(f"  {field:<16}{np.mean(a):>12.4f}{np.mean(b):>12.4f}{p_val:>12.4f}  {sig}")
+        print("  Bonferroni-corrected alpha = 0.05/5 = 0.010 (5 simultaneous tests)")
 
 
 def run_level3(qrng_rows, num_trials, n=4, k=2):
@@ -128,7 +130,9 @@ def run_level3(qrng_rows, num_trials, n=4, k=2):
     print(f"  Baseline (majority-class) = {baseline*100:.2f}%")
     print(f"  Best model accuracy       = {best*100:.2f}% +/- {best_std*100:.2f}%")
     print(f"  Margin over baseline      = {(best-baseline)*100:+.2f} points")
-    print(f"  NOTE: predicting from public (A, t) alone directly tests the LWE hardness")
+    print(f"  NOTE: at n={n}, k={k} the secret is recoverable from public (A, t) by brute")
+    print(f"  force in under a millisecond (see break_poc.py). A null result here therefore")
+    print(f"  reflects these ML models, not LWE hardness.")
     print(f"  assumption underlying Kyber/QEQSKE at our toy parameters (n={n}, k={k}).")
 
 

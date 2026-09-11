@@ -37,10 +37,10 @@ def main():
     print("#" * 70)
 
     # --- Step 0: Ensure Mersenne baseline exists ---
-    mersenne_numbers = generate_mersenne_batch(1024, seed=42)
-    save_to_file(mersenne_numbers, "mersenne_baseline.txt")
+    mersenne_numbers = generate_mersenne_batch(197632, seed=42)
+    save_to_file(mersenne_numbers, "mersenne_large_baseline.txt")
 
-    qrng_numbers = load_numbers("sample_qrng_batch.txt")
+    qrng_numbers = load_numbers("qrng_combined.txt")
 
     # --- Step 1: Verify QEQSKE correctness ---
     print("\n\n" + "#" * 70)
@@ -76,7 +76,7 @@ def main():
     print("# STEP 5: Attack C Groundwork — Timing Side-Channel")
     print("#" * 70)
     timing_results = attack_c_timing_groundwork.measure_keygen_timing(
-        qrng_numbers, n=4, k=2, num_trials=5
+        qrng_numbers, n=4, k=2, num_trials=1000
     )
 
     # --- Final Summary ---

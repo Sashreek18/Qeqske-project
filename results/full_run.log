@@ -1,0 +1,206 @@
+### statistical_tests
+
+============================================================
+Statistical Test Results: Your Real QRNG Data (ANU)
+============================================================
+  [PASS] Frequency (Monobit)       {'p_value': 0.9129}
+  [PASS] Runs                      {'p_value': 0.9254}
+  [PASS] Longest Run               {'longest_run': 13, 'expected_approx': 14.0}
+  [PASS] Chi-Square Uniformity     {'chi_square': 16.28, 'p_value': 0.3634}
+  [PASS] Serial Correlation        {'correlation': 0.0348}
+
+  Summary: 5/5 tests passed
+
+============================================================
+Statistical Test Results: Mersenne Twister (Pseudo-Random)
+============================================================
+  [PASS] Frequency (Monobit)       {'p_value': 0.0377}
+  [PASS] Runs                      {'p_value': 0.4001}
+  [PASS] Longest Run               {'longest_run': 11, 'expected_approx': 14.0}
+  [PASS] Chi-Square Uniformity     {'chi_square': 20.38, 'p_value': 0.1575}
+  [PASS] Serial Correlation        {'correlation': 0.0077}
+
+  Summary: 5/5 tests passed
+### attack_a_distinguisher
+Dataset built: 256 samples, 15 features per sample
+  QRNG samples: 128
+  Mersenne Twister samples: 128
+
+============================================================
+ATTACK A RESULTS: Can ML distinguish QRNG from Pseudo-Random?
+============================================================
+  RandomForest    accuracy = 51.95%   -> NOT reliably distinguishable (good for QRNG security)
+  SVM             accuracy = 49.35%   -> NOT reliably distinguishable (good for QRNG security)
+
+  Baseline (random guess) = 50.00%
+  NOTE: Results based on 1024 samples — statistically robust.
+
+  Top distinguishing features (Random Forest importance):
+    diff_std             0.0930
+    autocorr_lag1        0.0862
+    range                0.0854
+    median               0.0841
+    skew                 0.0828
+### attack_a_levels_2_3
+######################################################################
+ATTACK A — Levels 2 and 3
+######################################################################
+
+Collecting QEQSKE outputs fed by real QRNG (300 trials)...
+Collecting QEQSKE outputs fed by Mersenne Twister (300 trials)...
+
+======================================================================
+LEVEL 2 — QEQSKE-derived output comparison (QRNG-fed vs MT-fed)
+======================================================================
+  Field              QRNG mean     MT mean  KS p-value  Conclusion
+  q                 29286.9533  32515.8333      0.0125  DIFFERENT dist.
+  secret_mean          -0.0138      0.0054      0.9993  same distribution
+  secret_weight         5.3167      5.3233      1.0000  same distribution
+  t_mean                0.5061      0.5028      0.8483  same distribution
+  t_std                 0.2728      0.2628      0.2488  same distribution
+
+======================================================================
+LEVEL 3 — Adversarial prediction from PUBLIC outputs only (no side-channel)
+======================================================================
+  Baseline (majority-class) = 56.33%
+  Best model accuracy       = 54.60% +/- 5.12%
+  Margin over baseline      = -1.73 points
+  NOTE: predicting from public (A, t) alone directly tests the LWE hardness
+  assumption underlying Kyber/QEQSKE at our toy parameters (n=4, k=2).
+
+Done.
+### attack_b_entropy_leakage
+Training autoencoder on 177 QRNG windows (window_size=16)...
+
+============================================================
+ATTACK B RESULTS: Entropy Leakage via Autoencoder Reconstruction
+============================================================
+  (Lower error = autoencoder finds MORE structure/patterns = WORSE for security)
+
+  QRNG held-out test error    = 0.07112 (±0.01698)
+  Mersenne Twister error      = 0.07270 (±0.01940)
+  Pure uniform random error   = 0.07422 (±0.02099)
+
+  QRNG error / Pure-random error ratio = 0.958
+  -> QRNG behaves like ideal randomness (ratio ~1.0). GOOD — no obvious leakage.
+### attack_c_timing_groundwork
+
+============================================================
+Timing Measurements: key_gen() across 5 trials
+============================================================
+  Mean time   = 0.0203 ms
+  Std dev     = 0.0073 ms
+  Min / Max   = 0.0124 / 0.0318 ms
+
+  Correlation(timing, secret_weight) = 0.8617
+  -> MEANINGFUL correlation detected — potential timing side-channel!
+
+  NOTE: Real side-channel attacks (per proposal) also need power and
+  cache traces from actual hardware execution — ask HCL whether they
+  can provide an oscilloscope/profiler setup or pre-collected traces.
+### attack_c_ram_sidechannel
+/Library/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python: can't open file '/Users/sashreekkandagatla/Downloads/CSD493 Project Guidelines 2/attack_c_ram_sidechannel.py': [Errno 2] No such file or directory
+### attack_c_cache_sidechannel
+/Library/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python: can't open file '/Users/sashreekkandagatla/Downloads/CSD493 Project Guidelines 2/attack_c_cache_sidechannel.py': [Errno 2] No such file or directory
+### attack_c_combined_ml
+
+######################################################################
+ATTACK C-4: Combined Side-Channel Dataset Collection
+######################################################################
+Collected 500 combined trials (Time + RAM + CPU measured together per secret key).
+
+====================================================================
+Statistical Significance — each signal vs. secret_weight
+====================================================================
+  Signal               Pearson r     p-value  Conclusion
+  timing_us               0.0830      0.0637  not significant
+  cpu_user_us             0.0804      0.0726  not significant
+  ram_peak_bytes          0.0981      0.0282  SIGNIFICANT (p<0.05)
+  num_allocations         0.0990      0.0268  SIGNIFICANT (p<0.05)
+
+====================================================================
+Combined ML Attack — predicting above/below-median secret weight
+====================================================================
+  Dataset: 500 trials -> 350 train / 150 test
+  Features: timing_us, cpu_user_us, ram_peak_bytes, num_allocations
+  Random/majority-class baseline accuracy = 54.67%
+
+  Model                     Accuracy  Precision   Recall      F1
+  Logistic Regression         54.67%     50.00%    5.88%  10.53%
+  Random Forest               53.33%     48.48%   47.06%  47.76%
+  SVM (RBF)                   55.33%     54.55%    8.82%  15.19%
+  Neural Network (MLP)        54.00%     48.78%   29.41%  36.70%
+
+  Confusion matrices (rows=actual, cols=predicted, [below-median, above-median]):
+    Logistic Regression:
+[[78  4]
+ [64  4]]
+    Random Forest:
+[[48 34]
+ [36 32]]
+    SVM (RBF):
+[[77  5]
+ [62  6]]
+    Neural Network (MLP):
+[[61 21]
+ [48 20]]
+
+  Random Forest feature importance (which signal matters most):
+    timing_us          0.4629  ##################
+    cpu_user_us        0.4370  #################
+    ram_peak_bytes     0.0570  ##
+    num_allocations    0.0432  #
+
+  Best model beat baseline by +0.67 percentage points.
+  Combined-signal leakage risk classification: LOW
+
+  NOTE: this predicts a derived property (above/below-median secret
+  weight), NOT the secret key itself -- recovering the full key from
+  software side-channels alone is not a realistic or claimed outcome.
+### attack_c_leaky_vs_clean
+######################################################################
+POSITIVE CONTROL: QEQSKE-clean vs. QEQSKE-leaky
+######################################################################
+
+--- Collecting QEQSKE-CLEAN dataset (300 trials) ---
+Collected 300 clean trials.
+
+--- Collecting QEQSKE-LEAKY dataset (300 trials) ---
+Collected 300 leaky trials.
+
+======================================================================
+ML ATTACK on QEQSKE-CLEAN (expect: near baseline)
+======================================================================
+
+  Baseline (majority-class) accuracy = 56.33%
+  Model                         Accuracy (mean+-std)     ROC-AUC (mean+-std)
+  Logistic Regression         56.33% +/-  0.75%       0.513 +/- 0.092
+  Random Forest               53.63% +/-  6.09%       0.542 +/- 0.068
+  SVM (RBF)                   54.20% +/-  4.39%       0.523 +/- 0.054
+  Neural Network (MLP)        54.13% +/-  3.67%       0.532 +/- 0.059
+
+======================================================================
+ML ATTACK on QEQSKE-LEAKY (expect: clearly above baseline)
+======================================================================
+
+  Baseline (majority-class) accuracy = 56.33%
+  Model                         Accuracy (mean+-std)     ROC-AUC (mean+-std)
+  Logistic Regression        100.00% +/-  0.00%       1.000 +/- 0.000
+  Random Forest              100.00% +/-  0.00%       1.000 +/- 0.000
+  SVM (RBF)                  100.00% +/-  0.00%       1.000 +/- 0.000
+  Neural Network (MLP)       100.00% +/-  0.00%       1.000 +/- 0.000
+### attack_c_progressive_difficulty
+######################################################################
+ATTACK C — Progressive Difficulty Ladder (1000 trials, repeated CV)
+######################################################################
+Collected 1000 combined trials.
+
+Target                          Difficulty     Classes   Baseline          Best Acc      Margin
+----------------------------------------------------------------------------------------------------
+  Secret weight (binary)          Easy          2 classes  baseline= 53.9%  best_acc= 53.6% +/-  1.5%  (95% CI +/-0.4pts)  margin= -0.3pts
+  Secret sum (binary)             Easy          2 classes  baseline= 57.7%  best_acc= 57.6% +/-  0.4%  (95% CI +/-0.1pts)  margin= -0.1pts
+  Secret weight (4-class)         Medium        3 classes  baseline= 46.1%  best_acc= 45.7% +/-  0.5%  (95% CI +/-0.1pts)  margin= -0.4pts
+  s[0][0] sign (binary)           Hard          2 classes  baseline= 65.9%  best_acc= 65.7% +/-  0.4%  (95% CI +/-0.1pts)  margin= -0.2pts
+  s[0][0] exact value             Very Hard     3 classes  baseline= 34.1%  best_acc= 31.8% +/-  2.6%  (95% CI +/-0.7pts)  margin= -2.3pts
+
+Done.

@@ -1,0 +1,10 @@
+# Core numerics and statistics
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.3
+
+# Process and memory instrumentation for side-channel measurement
+psutil>=5.9
+
+# NOTE: the LSTM / GRU / Transformer models in nn_from_scratch.py are
+# implemented from scratch in NumPy. No deep learning framework is required.

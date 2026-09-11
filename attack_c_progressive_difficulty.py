@@ -155,8 +155,9 @@ if __name__ == "__main__":
     results.append(evaluate_target(X, y_quartile, "Secret weight (4-class)", "Medium"))
 
     s00_vals = np.array([r["s00"] for r in rows])
-    y_sign = (s00_vals > 0).astype(int)
-    results.append(evaluate_target(X, y_sign, "s[0][0] sign (binary)", "Hard"))
+
+    y_sign = (s00_vals != 0).astype(int)
+    results.append(evaluate_target(X, y_sign, "s[0][0] zero/non-zero", "Hard"))
 
     y_exact = (s00_vals + 1).astype(int)  # map {-1,0,1} -> {0,1,2}
     results.append(evaluate_target(X, y_exact, "s[0][0] exact value", "Very Hard"))

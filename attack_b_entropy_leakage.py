@@ -123,10 +123,10 @@ def run_attack_b(qrng_numbers, mersenne_numbers, window_size=16, stride=4, verbo
 
 
 if __name__ == "__main__":
-    with open("sample_qrng_batch.txt") as f:
+    with open("qrng_combined.txt") as f:
         qrng_numbers = [int(x.strip()) for x in f.read().strip().split(",") if x.strip()]
 
-    with open("mersenne_baseline.txt") as f:
+    with open("mersenne_large_baseline.txt") as f:
         mersenne_numbers = [int(x.strip()) for x in f.read().strip().split(",") if x.strip()]
 
     run_attack_b(qrng_numbers, mersenne_numbers, window_size=16, stride=4)

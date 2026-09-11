@@ -88,7 +88,7 @@ def measure_keygen_timing(numbers, n=4, k=2, num_trials=20, verbose=True):
 
 
 if __name__ == "__main__":
-    with open("sample_qrng_batch.txt") as f:
+    with open("qrng_combined.txt") as f:
         numbers = [int(x.strip()) for x in f.read().strip().split(",") if x.strip()]
 
-    measure_keygen_timing(numbers, n=4, k=2, num_trials=5)
+    measure_keygen_timing(numbers, n=4, k=2, num_trials=1000)
