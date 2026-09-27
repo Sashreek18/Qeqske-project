@@ -28,7 +28,7 @@ datasets — see collect_qrng_data.py.
 import math
 import random as pyrandom
 import numpy as np
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
@@ -152,40 +152,44 @@ def run_attack_a(qrng_numbers, mersenne_numbers, window_size=8, verbose=True):
               "Collect more QRNG data (see collect_qrng_data.py) for a real experiment.")
         return None
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=42, stratify=y
-    )
-
+    # Use 5-Fold Cross Validation instead of a single split for a true 95% CI
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     results = {}
 
     # --- Random Forest ---
-    rf = RandomForestClassifier(n_estimators=200, random_state=42)
-    rf.fit(X_train, y_train)
-    rf_pred = rf.predict(X_test)
-    rf_acc = accuracy_score(y_test, rf_pred)
-    results["RandomForest"] = {"accuracy": rf_acc, "model": rf}
+    rf = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+    rf_scores = cross_val_score(rf, X, y, cv=cv, scoring='accuracy', n_jobs=-1)
+    rf_acc_mean = np.mean(rf_scores)
+    rf_acc_std = np.std(rf_scores)
+    rf_ci_margin = 1.96 * (rf_acc_std / np.sqrt(5))
+    results["RandomForest"] = {"mean": rf_acc_mean, "std": rf_acc_std, "ci": rf_ci_margin, "model": rf}
 
     # --- SVM ---
-    svm = SVC(kernel="rbf", probability=True, random_state=42)
-    svm.fit(X_train, y_train)
-    svm_pred = svm.predict(X_test)
-    svm_acc = accuracy_score(y_test, svm_pred)
-    results["SVM"] = {"accuracy": svm_acc, "model": svm}
+    # SVM on ~50k samples takes time, using fewer max_iter or just keeping it
+    svm = SVC(kernel="rbf", probability=False, random_state=42, max_iter=2000)
+    svm_scores = cross_val_score(svm, X, y, cv=cv, scoring='accuracy', n_jobs=-1)
+    svm_acc_mean = np.mean(svm_scores)
+    svm_acc_std = np.std(svm_scores)
+    svm_ci_margin = 1.96 * (svm_acc_std / np.sqrt(5))
+    results["SVM"] = {"mean": svm_acc_mean, "std": svm_acc_std, "ci": svm_ci_margin, "model": svm}
 
     if verbose:
         print(f"\n{'=' * 60}")
         print("ATTACK A RESULTS: Can ML distinguish QRNG from Pseudo-Random?")
         print(f"{'=' * 60}")
         for name, r in results.items():
-            acc = r["accuracy"]
-            verdict = "DISTINGUISHABLE (potential leak!)" if acc > 0.60 else \
+            mean_acc = r["mean"]
+            std = r["std"]
+            ci = r["ci"]
+            verdict = "DISTINGUISHABLE (potential leak!)" if mean_acc > 0.60 else \
                       "NOT reliably distinguishable (good for QRNG security)"
-            print(f"  {name:15s} accuracy = {acc:.2%}   -> {verdict}")
+            print(f"  {name:15s} accuracy = {mean_acc:.2%} ± {std:.2%}  (95% CI ±{ci:.2%}) -> {verdict}")
         print(f"\n  Baseline (random guess) = 50.00%")
-        print(f"  NOTE: Results based on {X.shape[0]} samples — statistically robust.")
+        print(f"  NOTE: Results based on {X.shape[0]} samples via 5-Fold Cross-Validation.")
 
         # Feature importance from Random Forest — tells us WHICH features
         # carry distinguishing signal, if any
+        rf.fit(X, y)
         importances = rf.feature_importances_
         top_features = sorted(zip(feat_names, importances), key=lambda x: -x[1])[:5]
         print(f"\n  Top distinguishing features (Random Forest importance):")
