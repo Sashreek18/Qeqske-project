@@ -141,6 +141,31 @@ print("# STEP 9: Attack C — Positive Control")
 print("#" * 70)
 subprocess.run(["python3", "attack_c_leaky_vs_clean.py"])
 
+# ─────────────────────────────────────────────
+# STEP 10 — System Comparison (ML-KEM vs QEQSKE)
+# ─────────────────────────────────────────────
+print("\n" + "#" * 70)
+print("# STEP 10: System Comparison (ML-KEM vs QEQSKE)")
+print("#" * 70)
+subprocess.run(["python3", "system_comparison.py"])
+
+# ─────────────────────────────────────────────
+# STEP 11 — Attack A: Level 1 Full ML & Sequence Models
+# ─────────────────────────────────────────────
+print("\n" + "#" * 70)
+print("# STEP 11: Attack A — Level 1 Full Stats & Sequence Models")
+print("#" * 70)
+subprocess.run(["python3", "attack_a_level1_full_stats.py"])
+
+# ─────────────────────────────────────────────
+# STEP 12 — Reproducibility Info
+# ─────────────────────────────────────────────
+print("\n" + "#" * 70)
+print("# STEP 12: Collect Reproducibility Metadata")
+print("#" * 70)
+subprocess.run(["python3", "collect_reproducibility_info.py"])
+
+
 
 # ─────────────────────────────────────────────
 # FINAL SUMMARY
@@ -158,6 +183,9 @@ print(f"""
   STEP 7 — Attack C Combined ML      : ✅ COMPLETE (Time+RAM+CPU secure)
   STEP 8 — Attack C Progressive      : ✅ COMPLETE (No target edge found)
   STEP 9 — Attack C Positive Control : ✅ COMPLETE (Pipeline verified)
+  STEP 10 — System Comparison        : ✅ COMPLETE (ML-KEM comparison done)
+  STEP 11 — Attack A Full Stats      : ✅ COMPLETE (Sequence models run)
+  STEP 12 — Reproducibility Metadata : ✅ COMPLETE (Saved to JSON)
 
   QRNG numbers used : {len(qrng_numbers)} (real ANU quantum numbers)
   Mersenne baseline : {len(mersenne_numbers)} (pseudo-random comparison)

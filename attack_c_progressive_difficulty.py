@@ -33,6 +33,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 
+import attack_c_stats
 from qrng_handler import QRNGSource
 from qeqske_core import QEQSKERandom, key_gen
 
@@ -107,24 +108,32 @@ def evaluate_target(X, y, target_name, difficulty, n_splits=5, n_repeats=10):
     rf = RandomForestClassifier(n_estimators=200, random_state=42)
 
     rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=42)
-    acc_lr = cross_val_score(model, X, y, cv=rskf, scoring="accuracy")
-    acc_rf = cross_val_score(rf, X, y, cv=rskf, scoring="accuracy")
+    
+    scoring = ("accuracy", "balanced_accuracy", "roc_auc", "f1") if n_classes == 2 else ("accuracy", "balanced_accuracy", "roc_auc_ovr", "f1_macro")
+    ml_stats_lr = attack_c_stats.compute_ml_stats(model, X, y, rskf, scoring=scoring)
+    ml_stats_rf = attack_c_stats.compute_ml_stats(rf, X, y, rskf, scoring=scoring)
 
-    best_acc = max(acc_lr.mean(), acc_rf.mean())
-    best_std = acc_lr.std() if acc_lr.mean() >= acc_rf.mean() else acc_rf.std()
+    acc_lr_mean = ml_stats_lr["accuracy"]["mean"]
+    acc_rf_mean = ml_stats_rf["accuracy"]["mean"]
+
+    best_acc = max(acc_lr_mean, acc_rf_mean)
+    best_stats = ml_stats_lr if acc_lr_mean >= acc_rf_mean else ml_stats_rf
+    best_std = best_stats["accuracy"]["sd"]
     margin = best_acc - baseline
-
-    # 95% CI via normal approximation over the 50 CV fold scores
-    scores = acc_lr if acc_lr.mean() >= acc_rf.mean() else acc_rf
-    ci95 = 1.96 * scores.std() / np.sqrt(len(scores))
+    
+    ci_low, ci_high = best_stats["accuracy"]["ci95"]
+    ci_margin = (ci_high - ci_low) / 2.0
 
     print(f"  {target_name:<32}{difficulty:<12}{n_classes:>3} classes  "
           f"baseline={baseline*100:5.1f}%  best_acc={best_acc*100:5.1f}% +/- {best_std*100:4.1f}%  "
-          f"(95% CI +/-{ci95*100:.1f}pts)  margin={margin*100:+5.1f}pts")
+          f"(95% CI +/-{ci_margin*100:.1f}pts)  margin={margin*100:+5.1f}pts")
+          
+    attack_c_stats.update_json_results("results/attack_c_full_stats.json", f"progressive_ml_{target_name}_LR", ml_stats_lr)
+    attack_c_stats.update_json_results("results/attack_c_full_stats.json", f"progressive_ml_{target_name}_RF", ml_stats_rf)
 
     return {"target": target_name, "difficulty": difficulty, "n_classes": n_classes,
             "baseline": baseline, "best_acc": best_acc, "best_std": best_std,
-            "ci95": ci95, "margin": margin}
+            "ci95": ci_margin, "margin": margin}
 
 
 if __name__ == "__main__":
@@ -152,12 +161,12 @@ if __name__ == "__main__":
 
     quartiles = np.percentile(weights, [25, 50, 75])
     y_quartile = np.digitize(weights, quartiles)
-    results.append(evaluate_target(X, y_quartile, "Secret weight (4-class)", "Medium"))
+    results.append(evaluate_target(X, y_quartile, "Secret weight (multi-class)", "Medium"))
 
     s00_vals = np.array([r["s00"] for r in rows])
 
-    y_sign = (s00_vals != 0).astype(int)
-    results.append(evaluate_target(X, y_sign, "s[0][0] zero/non-zero", "Hard"))
+    y_sign = (s00_vals > 0).astype(int)
+    results.append(evaluate_target(X, y_sign, "s[0][0] sign (positive vs not)", "Hard"))
 
     y_exact = (s00_vals + 1).astype(int)  # map {-1,0,1} -> {0,1,2}
     results.append(evaluate_target(X, y_exact, "s[0][0] exact value", "Very Hard"))

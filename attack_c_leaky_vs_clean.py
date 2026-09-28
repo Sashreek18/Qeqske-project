@@ -33,6 +33,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.metrics import roc_auc_score
 
+import attack_c_stats
+
 from qrng_handler import QRNGSource
 from qeqske_core import (
     QEQSKERandom, mat_mult_mod, mat_add_mod, right_rotate, key_gen as key_gen_clean
@@ -111,7 +113,7 @@ def collect_dataset(numbers, keygen_fn, n=4, k=2, num_trials=300, verbose=True):
     return rows
 
 
-def run_ml_with_cv(rows, label_name="secret_weight", n_splits=5, n_repeats=10):
+def run_ml_with_cv(rows, label_name="secret_weight", n_splits=5, n_repeats=10, scenario_name="clean"):
     """Predicts above/below-median label using repeated stratified k-fold CV."""
     X = np.array([[r["timing_us"]] for r in rows])
     vals = np.array([r[label_name] for r in rows])
@@ -125,7 +127,7 @@ def run_ml_with_cv(rows, label_name="secret_weight", n_splits=5, n_repeats=10):
     models = {
         "Logistic Regression": make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000)),
         "Random Forest": RandomForestClassifier(n_estimators=200, random_state=42),
-        "SVM (RBF)": make_pipeline(StandardScaler(), SVC(kernel="rbf", probability=True)),
+        "SVM (RBF)": make_pipeline(StandardScaler(), SVC(kernel="rbf", probability=False)),
         "Neural Network (MLP)": make_pipeline(StandardScaler(), MLPClassifier(hidden_layer_sizes=(16, 8), max_iter=2000, random_state=42)),
     }
 
@@ -136,15 +138,18 @@ def run_ml_with_cv(rows, label_name="secret_weight", n_splits=5, n_repeats=10):
     print(f"  {'Model':<24}{'Accuracy (mean+-std)':>26}{'ROC-AUC (mean+-std)':>24}")
     results = {}
     for name, model in models.items():
-        acc_scores = cross_val_score(model, X, y, cv=rskf, scoring="accuracy")
-        try:
-            auc_scores = cross_val_score(model, X, y, cv=rskf, scoring="roc_auc")
-        except Exception:
-            auc_scores = np.array([np.nan])
-        results[name] = {"acc_mean": acc_scores.mean(), "acc_std": acc_scores.std(),
-                          "auc_mean": np.nanmean(auc_scores), "auc_std": np.nanstd(auc_scores)}
-        print(f"  {name:<24}{acc_scores.mean()*100:>9.2f}% +/- {acc_scores.std()*100:>5.2f}%"
-              f"{'':<2}{np.nanmean(auc_scores):>10.3f} +/- {np.nanstd(auc_scores):.3f}")
+        ml_stats = attack_c_stats.compute_ml_stats(model, X, y, rskf)
+        acc_mean = ml_stats["accuracy"]["mean"]
+        acc_std = ml_stats["accuracy"]["sd"]
+        auc_mean = ml_stats["roc_auc"]["mean"]
+        auc_std = ml_stats["roc_auc"]["sd"]
+        
+        results[name] = {"acc_mean": acc_mean, "acc_std": acc_std,
+                          "auc_mean": auc_mean, "auc_std": auc_std}
+        print(f"  {name:<24}{acc_mean*100:>9.2f}% +/- {acc_std*100:>5.2f}%"
+              f"{'':<2}{auc_mean:>10.3f} +/- {auc_std:.3f}")
+              
+        attack_c_stats.update_json_results("results/attack_c_full_stats.json", f"{scenario_name}_ml_{name}", ml_stats)
 
     return results, baseline
 
@@ -168,9 +173,9 @@ if __name__ == "__main__":
     print("\n" + "=" * 70)
     print("ML ATTACK on QEQSKE-CLEAN (expect: near baseline)")
     print("=" * 70)
-    run_ml_with_cv(clean_rows)
+    run_ml_with_cv(clean_rows, scenario_name="clean")
 
     print("\n" + "=" * 70)
     print("ML ATTACK on QEQSKE-LEAKY (expect: clearly above baseline)")
     print("=" * 70)
-    run_ml_with_cv(leaky_rows)
+    run_ml_with_cv(leaky_rows, scenario_name="leaky")

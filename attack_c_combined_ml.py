@@ -54,6 +54,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
+import attack_c_stats
 from qrng_handler import QRNGSource
 from qeqske_core import QEQSKERandom, key_gen
 
@@ -149,12 +150,18 @@ def report_feature_significance(rows):
     for feat in features:
         vals = [r[feat] for r in rows]
         if len(set(vals)) > 1 and len(set(weights)) > 1:
-            r, p = stats.pearsonr(vals, weights)
+            stats_dict = attack_c_stats.compute_correlation_stats(vals, weights, len(features))
+            r = stats_dict["pearson_r"]
+            p = stats_dict["pearson_p"]
+            bonf_p = stats_dict["bonferroni_p"]
+            
+            attack_c_stats.update_json_results("results/attack_c_full_stats.json", f"combined_ml_signals_{feat}", stats_dict)
         else:
-            r, p = 0.0, 1.0
-        sig = "SIGNIFICANT (p<0.0125)" if p < 0.0125 else "not significant (Bonferroni)"
+            r, p, bonf_p = 0.0, 1.0, 1.0
+            
+        sig = "SIGNIFICANT (Bonferroni p<0.05)" if bonf_p < 0.05 else "not significant"
         print(f"  {feat:<18}{r:>12.4f}{p:>12.4f}  {sig}")
-        if p < 0.0125 and abs(r) > 0 and abs(r) < 0.15:
+        if bonf_p < 0.05 and abs(r) > 0 and abs(r) < 0.15:
             print(f"    (Note: r = {r:.4f} means under {(r**2)*100:.2f}% of variance explained; detectable but practically useless)")
 
 
@@ -206,6 +213,9 @@ def run_ml_attack(rows, verbose=True):
         
         results[name] = {"accuracy": acc, "precision": prec, "recall": rec, "f1": f1}
         print(f"  {name:<24}{acc*100:>9.2f}%{prec*100:>10.2f}%{rec*100:>8.2f}%{f1*100:>7.2f}%")
+        
+        ml_stats = attack_c_stats.compute_ml_stats(model, X, y, rskf)
+        attack_c_stats.update_json_results("results/attack_c_full_stats.json", f"combined_ml_models_{name}", ml_stats)
 
     if verbose:
         # Fit Random Forest on full dataset to extract overall feature importances

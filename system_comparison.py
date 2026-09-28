@@ -28,6 +28,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 
+import attack_c_stats
+
 from qrng_handler import QRNGSource
 from qeqske_core import QEQSKERandom, key_gen as qeqske_keygen
 from attack_c_leaky_vs_clean import key_gen_leaky as qeqske_keygen_leaky, _secret_properties
@@ -91,16 +93,23 @@ def run_attack(rows, name):
     rf = RandomForestClassifier(n_estimators=200, random_state=42)
     rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)
 
-    acc_lr = cross_val_score(model, X, y, cv=rskf, scoring="accuracy")
-    acc_rf = cross_val_score(rf, X, y, cv=rskf, scoring="accuracy")
+    ml_stats_lr = attack_c_stats.compute_ml_stats(model, X, y, rskf)
+    ml_stats_rf = attack_c_stats.compute_ml_stats(rf, X, y, rskf)
 
-    best_name = "Logistic Regression" if acc_lr.mean() >= acc_rf.mean() else "Random Forest"
-    best_acc = max(acc_lr.mean(), acc_rf.mean())
-    best_std = acc_lr.std() if best_name == "Logistic Regression" else acc_rf.std()
+    acc_lr_mean = ml_stats_lr["accuracy"]["mean"]
+    acc_rf_mean = ml_stats_rf["accuracy"]["mean"]
+
+    best_name = "Logistic Regression" if acc_lr_mean >= acc_rf_mean else "Random Forest"
+    best_acc = max(acc_lr_mean, acc_rf_mean)
+    best_stats = ml_stats_lr if acc_lr_mean >= acc_rf_mean else ml_stats_rf
+    best_std = best_stats["accuracy"]["sd"]
 
     print(f"  {name:<28}baseline={baseline*100:5.2f}%   "
           f"best={best_name} {best_acc*100:5.2f}% +/- {best_std*100:.2f}%   "
           f"margin={((best_acc-baseline)*100):+.2f}pts")
+          
+    attack_c_stats.update_json_results("results/attack_c_full_stats.json", f"system_comp_{name}_LR", ml_stats_lr)
+    attack_c_stats.update_json_results("results/attack_c_full_stats.json", f"system_comp_{name}_RF", ml_stats_rf)
 
     return {"system": name, "baseline": baseline, "best_model": best_name,
             "best_acc": best_acc, "best_std": best_std, "margin": best_acc - baseline}
