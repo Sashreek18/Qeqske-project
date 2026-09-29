@@ -73,15 +73,17 @@ def compute_ml_stats(model, X, y, cv, scoring=("accuracy", "balanced_accuracy", 
             sd = np.std(arr, ddof=1)
             t_crit = scipy.stats.t.ppf(0.975, df=n-1)
             margin = t_crit * sd / np.sqrt(n)
+            ci_low = max(0.0, float(mean - margin))
+            ci_high = min(1.0, float(mean + margin))
             res[met] = {
                 "mean": float(mean),
                 "sd": float(sd),
-                "ci95": [float(mean - margin), float(mean + margin)]
+                "ci95": [ci_low, ci_high]
             }
         
-    # Permutation test (fast: 50 permutations with 3-fold CV to avoid 10,000 fits on laptops)
+    # Permutation test (200 permutations with 3-fold CV)
     fast_cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
-    score, perm_scores, pvalue = permutation_test_score(model, X, y, scoring="accuracy", cv=fast_cv, n_permutations=50, n_jobs=-1, random_state=42)
+    score, perm_scores, pvalue = permutation_test_score(model, X, y, scoring="accuracy", cv=fast_cv, n_permutations=200, n_jobs=-1, random_state=42)
     res["permutation_test"] = {
         "score": float(score),
         "pvalue": float(pvalue)

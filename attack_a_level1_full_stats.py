@@ -21,7 +21,9 @@ def calc_stats(scores):
     sd = np.std(scores, ddof=1) if n > 1 else 0.0
     t_crit = scipy.stats.t.ppf(0.975, df=n-1) if n > 1 else 0.0
     margin = t_crit * sd / np.sqrt(n) if n > 0 else 0.0
-    return {"mean": float(mean), "sd": float(sd), "ci95": [float(mean - margin), float(mean + margin)]}
+    ci_low = max(0.0, float(mean - margin))
+    ci_high = min(1.0, float(mean + margin))
+    return {"mean": float(mean), "sd": float(sd), "ci95": [ci_low, ci_high]}
 
 def run_classical():
     with open("qrng_combined.txt") as f:

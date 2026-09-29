@@ -32,7 +32,7 @@ def collect_info():
             "general_seed": 42,
             "attack_a_sequence_holdouts": "42 to 51 (10 repeated holdouts)",
             "all_other_scripts_and_cv": 42,
-            "exceptions": "None"
+            "exceptions": "Positive control checks retry with seed += 100 dynamically if they fail."
         },
         "cv_procedures": {
             "attack_a_classical": "RepeatedStratifiedKFold(n_splits=5, n_repeats=5)",
@@ -48,8 +48,16 @@ def collect_info():
             "epochs": 40,
             "optimizer": "Adam (b1=0.9, b2=0.999, eps=1e-8)",
             "batch_size": 32,
-            "early_stopping": "None (trains for all 40 epochs)"
+            "early_stopping": "None (trains for all 40 epochs)",
+            "architecture": "LSTM/GRU: 1 layer, bidirectional=False. Transformer: 1 layer, 1 head, max_len=64. Input dim=1 for all."
         },
+        "attack_c_classifier_hyperparameters": {
+            "Logistic Regression": "max_iter=1000, penalty='l2' (default), solver='lbfgs'",
+            "Random Forest": "n_estimators=200, random_state=42",
+            "SVM": "kernel='rbf', probability=False, C=1.0 (default)",
+            "MLP (Neural Network)": "hidden_layer_sizes=(16, 8), max_iter=2000, random_state=42"
+        },
+        "feature_scaling": "StandardScaler() used within make_pipeline for ALL Attack C classifiers (including Random Forest, for pipeline uniformity).",
         "qrng_data_collection": {
             "dates": "Not recorded, collected via collect_qrng_data.py across 2 ANU API accounts",
             "source": "Australian National University (ANU) QRNG API"
