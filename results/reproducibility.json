@@ -34,7 +34,7 @@
     "optimizer": "Adam (b1=0.9, b2=0.999, eps=1e-8)",
     "batch_size": 32,
     "early_stopping": "None (trains for all 40 epochs)",
-    "architecture": "LSTM/GRU: 1 layer, bidirectional=False. Transformer: 1 layer, 1 head, max_len=64. Input dim=1 for all."
+    "architecture": "LSTM/GRU: 1 layer, bidirectional=False. Transformer: 1 layer, 1 head, model_dim=16, feed_forward_width=16, output_projection=1. Input dim=1 for all."
   },
   "attack_c_classifier_hyperparameters": {
     "Logistic Regression": "max_iter=1000, penalty='l2' (default), solver='lbfgs'",
@@ -42,7 +42,10 @@
     "SVM": "kernel='rbf', probability=False, C=1.0 (default)",
     "MLP (Neural Network)": "hidden_layer_sizes=(16, 8), max_iter=2000, random_state=42"
   },
-  "feature_scaling": "StandardScaler() used within make_pipeline for ALL Attack C classifiers (including Random Forest, for pipeline uniformity).",
+  "feature_scaling": {
+    "Attack_C": "StandardScaler() used within make_pipeline for ALL Attack C classifiers (including Random Forest, for pipeline uniformity).",
+    "Attack_A_Classical": "No scaling applied (raw features passed directly to Random Forest, XGBoost, and SVM)."
+  },
   "qrng_data_collection": {
     "dates": "Not recorded, collected via collect_qrng_data.py across 2 ANU API accounts",
     "source": "Australian National University (ANU) QRNG API"
