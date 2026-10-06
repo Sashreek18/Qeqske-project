@@ -37,7 +37,7 @@ def main():
     print("#" * 70)
 
     # --- Step 0: Ensure Mersenne baseline exists ---
-    mersenne_numbers = generate_mersenne_batch(197632, seed=42)
+    mersenne_numbers = generate_mersenne_batch(1106944, seed=42)
     save_to_file(mersenne_numbers, "mersenne_large_baseline.txt")
 
     qrng_numbers = load_numbers("qrng_combined.txt")

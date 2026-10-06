@@ -17,7 +17,7 @@ import subprocess
 warnings.filterwarnings("ignore")
 
 LARGE_DATASET   = "qrng_combined.txt"   # changed
-MERSENNE_SIZE   = 197632                 # changed
+MERSENNE_SIZE   = 1106944                 # changed
 
 SMALL_DATASET   = "qrng_large_dataset.txt"
 
