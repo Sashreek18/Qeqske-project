@@ -13,7 +13,7 @@ from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, reca
 
 from attack_a_distinguisher import build_dataset as build_dataset_classical
 from attack_a_sequence import build_dataset as build_dataset_sequence, load_qrng, mersenne_stream, autocorrelated_stream, holdout_eval
-from nn_from_scratch import MODELS
+from nn_torch import MODELS
 
 def calc_stats(scores):
     n = len(scores)

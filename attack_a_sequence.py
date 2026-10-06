@@ -28,7 +28,7 @@ import random
 
 import numpy as np
 
-from nn_from_scratch import MODELS
+from nn_torch import MODELS
 
 SEED = 42
 
