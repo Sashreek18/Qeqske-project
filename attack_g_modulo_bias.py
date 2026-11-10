@@ -707,7 +707,7 @@ def main():
   │  Chi-square on A entries             : {chi2:>8.0f}  (p << 10⁻⁵⁰)  │
   │  KL divergence (nats per A entry)    : {kl:>12.8f}              │
   │  Bias-weighted search improvement    : {improvement:>7.1f}%                │
-  │  Secret coeff bias detected          : {"YES (chi²=" + f"{chi2_s:.2f}" + ")":>22}  │
+  │  Secret coeff bias detected          : {"Marginal / No (chi²=" + f"{chi2_s:.2f}" + ")":>22}  │
   │  Phase 6 exact recoveries           : {recovered}/{total} ({100.0*recovered/total:.1f}%)           │
   ├────────────────────────────────────────────────────────────────────┤
   │  Root Cause: get_random() = call_qrng() % q                        │

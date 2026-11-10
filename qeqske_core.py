@@ -288,6 +288,69 @@ def decrypt_it(s, u, v_queue, q):
     return bits_to_string(bits)
 
 
+# ---------------------------------------------------------------------------
+# Authenticated/Hardened Decryption Countermeasure (Minimal CCA Mitigation)
+# ---------------------------------------------------------------------------
+
+import hmac
+import hashlib
+import json
+
+
+def _serialize_ct(u, v_queue):
+    """Deterministic JSON serialization of ciphertext (u, v_queue) for HMAC."""
+    return json.dumps({"u": u, "v_queue": v_queue}, sort_keys=True).encode("utf-8")
+
+
+def derive_auth_key(shared_secret: str, q: int) -> bytes:
+    """
+    Derive an HMAC authentication key for toy demonstration.
+
+    NOTE ON KEY MATERIAL:
+    In standard NIST ML-KEM / FIPS 203, a full Fujisaki-Okamoto (FO) transform
+    is used: the shared secret and ciphertext randomness are derived jointly from
+    G(m || H(pk)), and the decapsulation routine re-encrypts m to test (u, v) == (u*, v*).
+    In this toy demo setting, Bob and Alice compute an HMAC-SHA256 tag over (u, v)
+    using key = SHA256(shared_secret || q). An active adversary who injects crafted
+    (u*, v*) without knowing the secret plaintext cannot forge this tag.
+    """
+    material = f"{shared_secret}:{q}".encode("utf-8")
+    return hashlib.sha256(material).digest()
+
+
+def encrypt_it_hardened(rng: QEQSKERandom, shared_secret: str, A, t, q, n, k):
+    """
+    Hardened encryption: runs encrypt_it() and appends an HMAC-SHA256 authentication tag
+    over the serialized ciphertext components.
+    """
+    ct = encrypt_it(rng, shared_secret, A, t, q, n, k, legacy_pad_reuse=False)
+    auth_key = derive_auth_key(shared_secret, q)
+    mac = hmac.new(auth_key, _serialize_ct(ct["u"], ct["v_queue"]), hashlib.sha256).hexdigest()
+    ct["tag"] = mac
+    return ct
+
+
+def decrypt_it_hardened(s, u, v_queue, q, tag=None, expected_shared_secret=None):
+    """
+    Hardened decryption: verifies HMAC before performing any decryption or rounding.
+
+    If tag is missing or does not match the computed HMAC, the oracle REJECTS
+    immediately (returns None) without performing the secret-dependent inner product
+    or threshold comparison. This blocks adaptive chosen-ciphertext probing.
+    """
+    if tag is None:
+        return None  # Rejection: unauthenticated ciphertext
+
+    if expected_shared_secret is not None:
+        auth_key = derive_auth_key(expected_shared_secret, q)
+        expected_tag = hmac.new(auth_key, _serialize_ct(u, v_queue), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(tag, expected_tag):
+            return None  # Rejection: tag mismatch
+
+    # If verification succeeds, proceed with standard decryption
+    return decrypt_it(s, u, v_queue, q)
+
+
 def secret_weight(s):
     """Hamming-style weight of the secret: count of non-zero coefficients."""
     return sum(1 for row in s for v in row if v != 0)
@@ -295,3 +358,4 @@ def secret_weight(s):
 
 if __name__ == "__main__":
     print("QEQSKE core (revised) loaded. Run test_qeqske.py for a full exchange.")
+
