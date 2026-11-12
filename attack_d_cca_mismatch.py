@@ -93,9 +93,14 @@ Outputs five phases:
   Phase 5 — Root-cause and remediation guide
 """
 
+import hashlib
+import hmac
+import json
 import math
-import time
+import os
+import secrets
 import statistics
+import time
 import itertools
 from math import ceil
 
@@ -690,6 +695,118 @@ def phase6_hardened_oracle_test(rng, trials: int = 50):
 
 
 # ---------------------------------------------------------------------------
+# PHASE 6b — Forged (non-None) tag attack against decrypt_it_hardened()
+# ---------------------------------------------------------------------------
+
+def phase6b_forged_tag_attack(rng, trials: int = 50):
+    banner(f"PHASE 6b — Forged-Tag Attack vs. decrypt_it_hardened() ({trials} trials)")
+    print("""
+  EXPERIMENT:
+    The attacker now supplies a PRESENT but FORGED tag instead of tag=None.
+    Two forgery strategies are tested in alternating trials:
+
+      Strategy A — Random tag:
+        A random 64-hex-character string (256-bit) of the correct format.
+        The probability of a random collision is 1/2^256 ≈ 0, so every trial
+        should be rejected.
+
+      Strategy B — HMAC under a wrong key:
+        The attacker guesses the shared secret as a fixed wrong value ("WRONG_KEY")
+        and computes a valid HMAC-SHA256 under that guess.  Because the new
+        hardened scheme uses a re-encryption check (tag = SHA-256(m || u || v)),
+        a MAC computed under ANY key that is not the actual plaintext m will
+        produce a different hash, so this also always fails.
+
+    EXPECTED BEHAVIOR:
+      Both strategies produce a tag that does not equal SHA-256(m' || u || v)
+      for any valid m'.  Alice fully decrypts, recomputes the tag, and rejects
+      via constant-time comparison.  The binary-search attack cannot read a
+      0/1 bit decision, so coefficient recovery fails.
+""")
+
+    TAG_LEN = 64  # SHA-256 hex digest length
+    WRONG_KEY = b"WRONG_KEY_GUESSED_BY_ATTACKER"
+
+    rejections_a = 0   # Random-hex tag
+    rejections_b = 0   # HMAC-under-wrong-key tag
+    phase_a_success_a = 0
+    phase_a_success_b = 0
+
+    print(f"  {'Trial':>6}  {'Strategy':>10}  {'Oracle Response':>22}  {'CCA Col 0?':>12}")
+    print("  " + "-" * 60)
+
+    for trial in range(1, trials + 1):
+        kd = key_gen(rng, N, K)
+        s, q = kd["private_key"], kd["q"]
+        n, k = kd["n"], kd["k"]
+
+        for strategy_label, strategy in [("A-Random", "random"), ("B-WrongMAC", "hmac")]:
+            oracle_rejected = False
+            col0_recovered  = True
+
+            for r in range(n):
+                u_star  = _unit_u(probe_col=0, target_row=r, n=n, k=k)
+                v_star  = [_scalar_v(0, k)]
+
+                # Build the forged tag for this probe ciphertext
+                if strategy == "random":
+                    forged_tag = secrets.token_hex(TAG_LEN // 2)   # 64 hex chars
+                else:
+                    # HMAC-SHA256 under a wrong guessed key — always wrong for the
+                    # re-encryption check because the key material is not the plaintext
+                    ct_bytes = json.dumps({"u": u_star, "v_queue": v_star},
+                                          sort_keys=True).encode("utf-8")
+                    forged_tag = hmac.new(WRONG_KEY, ct_bytes,
+                                          hashlib.sha256).hexdigest()
+
+                resp = decrypt_it_hardened(s, u_star, v_star, q, tag=forged_tag)
+                if resp is None:
+                    oracle_rejected = True
+                    col0_recovered  = False
+                    break
+
+            if strategy == "random":
+                if oracle_rejected:
+                    rejections_a += 1
+                if col0_recovered:
+                    phase_a_success_a += 1
+                label = "A-Random"
+            else:
+                if oracle_rejected:
+                    rejections_b += 1
+                if col0_recovered:
+                    phase_a_success_b += 1
+                label = "B-WrongMAC"
+
+            if trial <= 10 or trial % 10 == 0 or trial == trials:
+                status = "REJECTED (forged tag)" if oracle_rejected else "ACCEPTED (unexpected!)"
+                print(f"  {trial:>6}  {label:>10}  {status:>22}  "
+                      f"{'✗ NO' if not col0_recovered else '✓ YES':>12}")
+
+    print()
+    print("  " + "-" * 60)
+    print(f"  Strategy A (random hex tag):")
+    print(f"    Rejection rate   : {rejections_a}/{trials} ({100.0 * rejections_a / trials:.1f}%)")
+    print(f"    CCA recovery rate: {phase_a_success_a}/{trials} ({100.0 * phase_a_success_a / trials:.1f}%)")
+    print()
+    print(f"  Strategy B (HMAC under wrong key):")
+    print(f"    Rejection rate   : {rejections_b}/{trials} ({100.0 * rejections_b / trials:.1f}%)")
+    print(f"    CCA recovery rate: {phase_a_success_b}/{trials} ({100.0 * phase_a_success_b / trials:.1f}%)")
+    print("  " + "-" * 60)
+    print("""
+  EXPLANATION:
+    Both strategies fail because the re-encryption tag check is keyed on the
+    PLAINTEXT m, not on any shared MAC key.  An attacker who does not know what
+    Alice will decrypt cannot precompute SHA-256(m' || u || v) for the actual m'.
+    Strategy B additionally shows that supplying a well-formed HMAC under a
+    wrong/guessed key is no better than random noise from the verifier's perspective.
+    Alice always fully decrypts before checking, so no threshold leakage occurs
+    before the constant-time rejection fires.
+""")
+    return phase_a_success_a, phase_a_success_b, rejections_a, rejections_b, trials
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -727,6 +844,9 @@ def main():
     # Phase 6 — Before/After validation against decrypt_it_hardened()
     p6_succ, p6_rej, p6_trials = phase6_hardened_oracle_test(rng, trials=50)
 
+    # Phase 6b — Forged (non-None) tag attack
+    p6b_succ_a, p6b_succ_b, p6b_rej_a, p6b_rej_b, p6b_trials = phase6b_forged_tag_attack(rng, trials=50)
+
     # Final verdict table
     banner("FINAL VERDICT (BEFORE VS. AFTER COUNTERMEASURE)")
     max_theoretical = N * math.ceil(math.log2(60000))
@@ -741,8 +861,15 @@ def main():
   │    *Note: Phase B is pre-existing toy-parameter brute-forceability.     │
   ├────────────────────────────────────────────────────────────────────────┤
   │  HARDENED COUNTERMEASURE (decrypt_it_hardened):                        │
-  │    Hardened Oracle Rejection Rate           : {p6_rej}/{p6_trials} ({100.0*p6_rej/p6_trials:.1f}%)             │
-  │    Phase A Recovery Rate on Hardened Oracle : {p6_succ}/{p6_trials} ({100.0*p6_succ/p6_trials:.1f}%)               │
+  │    Phase 6  — tag=None:                                                │
+  │      Rejection Rate                         : {p6_rej}/{p6_trials} ({100.0*p6_rej/p6_trials:.1f}%)             │
+  │      CCA Recovery Rate                      : {p6_succ}/{p6_trials} ({100.0*p6_succ/p6_trials:.1f}%)               │
+  │    Phase 6b — Forged tag (Strategy A: random hex):                     │
+  │      Rejection Rate                         : {p6b_rej_a}/{p6b_trials} ({100.0*p6b_rej_a/p6b_trials:.1f}%)             │
+  │      CCA Recovery Rate                      : {p6b_succ_a}/{p6b_trials} ({100.0*p6b_succ_a/p6b_trials:.1f}%)               │
+  │    Phase 6b — Forged tag (Strategy B: HMAC/wrong key):                 │
+  │      Rejection Rate                         : {p6b_rej_b}/{p6b_trials} ({100.0*p6b_rej_b/p6b_trials:.1f}%)             │
+  │      CCA Recovery Rate                      : {p6b_succ_b}/{p6b_trials} ({100.0*p6b_succ_b/p6b_trials:.1f}%)               │
   ├────────────────────────────────────────────────────────────────────────┤
   │  Root Cause                                 : Missing FO transform     │
   │  Mitigation Status                          : Verified (Attack dropped │

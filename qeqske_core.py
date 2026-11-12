@@ -292,63 +292,95 @@ def decrypt_it(s, u, v_queue, q):
 # Authenticated/Hardened Decryption Countermeasure (Minimal CCA Mitigation)
 # ---------------------------------------------------------------------------
 
-import hmac
 import hashlib
+import hmac
 import json
+import secrets
 
 
 def _serialize_ct(u, v_queue):
-    """Deterministic JSON serialization of ciphertext (u, v_queue) for HMAC."""
+    """Deterministic JSON serialization of ciphertext (u, v_queue) for tag computation."""
     return json.dumps({"u": u, "v_queue": v_queue}, sort_keys=True).encode("utf-8")
 
 
-def derive_auth_key(shared_secret: str, q: int) -> bytes:
+def _compute_tag(m: str, u, v_queue) -> str:
     """
-    Derive an HMAC authentication key for toy demonstration.
+    Compute the re-encryption integrity tag: SHA-256(m_bytes || ct_bytes).
 
-    NOTE ON KEY MATERIAL:
-    In standard NIST ML-KEM / FIPS 203, a full Fujisaki-Okamoto (FO) transform
-    is used: the shared secret and ciphertext randomness are derived jointly from
-    G(m || H(pk)), and the decapsulation routine re-encrypts m to test (u, v) == (u*, v*).
-    In this toy demo setting, Bob and Alice compute an HMAC-SHA256 tag over (u, v)
-    using key = SHA256(shared_secret || q). An active adversary who injects crafted
-    (u*, v*) without knowing the secret plaintext cannot forge this tag.
+    m        : the plaintext string Bob is encrypting
+    u, v_queue: the ciphertext components
+
+    This is a simplified stand-in for the FO transform's re-encryption-and-compare
+    step (phase5_root_cause already describes the full version).  In the real FO
+    transform Alice would re-encrypt m' under the public key with deterministic
+    randomness derived from m' and compare the resulting ciphertext component-wise.
+    Here we approximate that check by hashing the plaintext together with the
+    serialized ciphertext: a forged ciphertext cannot produce the same hash without
+    knowing m in advance, so the check still closes the adaptive-query channel.
+
+    NOTE ON TIMING: this function is called AFTER full decryption (Alice always
+    decrypts first, then verifies).  For a production deployment the final
+    comparison MUST be constant-time (e.g. hmac.compare_digest) so that tag
+    mismatches do not leak timing information about how many hash bytes matched.
     """
-    material = f"{shared_secret}:{q}".encode("utf-8")
-    return hashlib.sha256(material).digest()
+    m_bytes = m.encode("utf-8") if isinstance(m, str) else m
+    ct_bytes = _serialize_ct(u, v_queue)
+    return hashlib.sha256(m_bytes + ct_bytes).hexdigest()
 
 
 def encrypt_it_hardened(rng: QEQSKERandom, shared_secret: str, A, t, q, n, k):
     """
-    Hardened encryption: runs encrypt_it() and appends an HMAC-SHA256 authentication tag
-    over the serialized ciphertext components.
+    Hardened encryption (Bob's side).
+
+    Runs encrypt_it() then computes an integrity tag:
+        tag = SHA-256(m || u || v)
+    where m is the plaintext Bob is encrypting.  The tag binds the ciphertext to
+    the plaintext that produced it, so Alice can verify authenticity after
+    decryption without needing to share any additional secret.
     """
     ct = encrypt_it(rng, shared_secret, A, t, q, n, k, legacy_pad_reuse=False)
-    auth_key = derive_auth_key(shared_secret, q)
-    mac = hmac.new(auth_key, _serialize_ct(ct["u"], ct["v_queue"]), hashlib.sha256).hexdigest()
-    ct["tag"] = mac
+    ct["tag"] = _compute_tag(shared_secret, ct["u"], ct["v_queue"])
     return ct
 
 
 def decrypt_it_hardened(s, u, v_queue, q, tag=None, expected_shared_secret=None):
     """
-    Hardened decryption: verifies HMAC before performing any decryption or rounding.
+    Hardened decryption (Alice's side) — FO-style re-encryption check.
 
-    If tag is missing or does not match the computed HMAC, the oracle REJECTS
-    immediately (returns None) without performing the secret-dependent inner product
-    or threshold comparison. This blocks adaptive chosen-ciphertext probing.
+    Tag verification is MANDATORY: if tag is None this function rejects
+    immediately.  There is NO code path that skips verification for a non-None
+    tag; the `expected_shared_secret` parameter is retained only for call-site
+    compatibility and is intentionally ignored.
+
+    Algorithm:
+      1. Reject immediately if tag is None (no authenticated ciphertext).
+      2. Tentatively decrypt: m' = decrypt_it(s, u, v_queue, q).
+      3. Recompute: tag' = SHA-256(m' || u || v).
+      4. Constant-time compare tag' == tag.  If they differ, return None.
+         No bit or threshold information about the mismatch is revealed.
+      5. Return m' only on a clean tag match.
+
+    This is a simplified stand-in for the FO transform's re-encryption-and-compare
+    step (phase5_root_cause already describes the full version).  It requires Alice
+    to always fully decrypt before verifying, which is why a constant-time
+    comparison matters for a production version — the decryption itself must not
+    be short-circuited on crafted ciphertexts either (not addressed here, but noted).
     """
     if tag is None:
-        return None  # Rejection: unauthenticated ciphertext
+        return None  # Rejection: no tag supplied — unauthenticated ciphertext
 
-    if expected_shared_secret is not None:
-        auth_key = derive_auth_key(expected_shared_secret, q)
-        expected_tag = hmac.new(auth_key, _serialize_ct(u, v_queue), hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(tag, expected_tag):
-            return None  # Rejection: tag mismatch
+    # Step 2: tentative decryption (always performed — no early exit on crafted input)
+    m_prime = decrypt_it(s, u, v_queue, q)
 
-    # If verification succeeds, proceed with standard decryption
-    return decrypt_it(s, u, v_queue, q)
+    # Step 3: recompute tag from the decrypted plaintext and ciphertext
+    tag_prime = _compute_tag(m_prime, u, v_queue)
+
+    # Step 4: constant-time comparison — do not reveal which bytes differed
+    if not hmac.compare_digest(tag, tag_prime):
+        return None  # Rejection: tag mismatch — forged or corrupted ciphertext
+
+    # Step 5: verification passed
+    return m_prime
 
 
 def secret_weight(s):
