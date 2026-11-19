@@ -1,10 +1,13 @@
 """
-attack_d_cca_mismatch.py  --  Route 1: Chosen-Ciphertext Mismatch Attack on QEQSKE
-====================================================================================
-Author : Security Analysis Suite for QEQSKE
-Target : decrypt_it() in qeqske_core.py
+APPENDIX: Additional Observation — Unrelated Protocol-Level Vulnerability Found During Testbed Construction
+========================================================================================================
+Scope Note: This attack is strictly an auxiliary observation outside the primary thesis scope. The core
+research question of this thesis evaluates side-channel and machine-learning leakage from passive communication
+traces during honest key exchange. Attack D investigates active chosen-ciphertext query behavior (lack of a
+Fujisaki-Okamoto transform in unhardened decrypt_it) via classical binary search, and is retained in this
+appendix solely for completeness.
 
-BACKGROUND & THREAT MODEL
+BACKGROUND & THREAT MODEL (Appendix Reference)
 --------------------------
 In a Chosen-Ciphertext Attack (CCA2), an active adversary acts as a man-in-the-
 middle.  She crafts arbitrary (u*, v*) pairs and submits them to Alice's decryption
