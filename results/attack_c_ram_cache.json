@@ -1,0 +1,48 @@
+{
+  "ram_sidechannel": {
+    "dataset": "qrng_combined.txt",
+    "key_gen": {
+      "n_trials": 100,
+      "mean_peak_bytes": 1780.48,
+      "std_peak_bytes": 99.49195746390764,
+      "mean_allocations": 34.61,
+      "pearson_peak_r": 0.10928908230769589,
+      "pearson_peak_p": 0.27907639057705813,
+      "pearson_alloc_r": 0.03287869613457316,
+      "pearson_alloc_p": 0.74537701763564
+    },
+    "encrypt_it": {
+      "n_trials": 100,
+      "mean_peak_bytes": 12762.16,
+      "std_peak_bytes": 454.46317166520765,
+      "mean_allocations": 325.03,
+      "pearson_peak_r": 0.2496665038120487,
+      "pearson_peak_p": 0.01224232578453154,
+      "pearson_alloc_r": 0.23756296271793614,
+      "pearson_alloc_p": 0.01731547684280203
+    }
+  },
+  "cache_sidechannel": {
+    "dataset": "qrng_combined.txt",
+    "key_gen": {
+      "n_trials": 20,
+      "reps_per_trial": 500,
+      "mean_user_us_per_call": 19.28145280000002,
+      "std_user_us_per_call": 3.326571296351733,
+      "pearson_user_r": 0.3938601522804809,
+      "pearson_user_p": 0.08575460807020722,
+      "pearson_sys_r": 0.31103455817311465,
+      "pearson_sys_p": 0.18193592783790377
+    },
+    "encrypt_it": {
+      "n_trials": 20,
+      "reps_per_trial": 100,
+      "mean_user_us_per_call": 139.43311999999995,
+      "std_user_us_per_call": 1.295309767800634,
+      "pearson_user_r": 0.08071959678614823,
+      "pearson_user_p": 0.7351387719731404,
+      "pearson_sys_r": -0.1897180020380429,
+      "pearson_sys_p": 0.42305668462212676
+    }
+  }
+}

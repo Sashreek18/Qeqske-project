@@ -1,0 +1,97 @@
+{
+  "n_trials": 1000,
+  "seed": 42,
+  "cv": "RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)",
+  "targets": [
+    {
+      "target": "Secret weight (binary)",
+      "difficulty": "Easy",
+      "n_classes": 2,
+      "baseline": 0.539,
+      "best_model": "Logistic Regression",
+      "best_acc": 0.5343000000000001,
+      "best_std": 0.01133938413905541,
+      "ci95": 0.003222617315577714,
+      "ci95_bounds": [
+        0.5310773826844224,
+        0.5375226173155778
+      ],
+      "margin": -0.0046999999999999265,
+      "perm_pvalue": 0.9651741293532339,
+      "lr_acc": 0.5343000000000001,
+      "rf_acc": 0.5115999999999999
+    },
+    {
+      "target": "Secret sum (binary)",
+      "difficulty": "Easy",
+      "n_classes": 2,
+      "baseline": 0.577,
+      "best_model": "Logistic Regression",
+      "best_acc": 0.574,
+      "best_std": 0.005439837932759928,
+      "ci95": 0.001545984834896763,
+      "ci95_bounds": [
+        0.5724540151651032,
+        0.5755459848348967
+      ],
+      "margin": -0.0030000000000000027,
+      "perm_pvalue": 0.4925373134328358,
+      "lr_acc": 0.574,
+      "rf_acc": 0.513
+    },
+    {
+      "target": "Secret weight (multi-class)",
+      "difficulty": "Medium",
+      "n_classes": 3,
+      "baseline": 0.461,
+      "best_model": "Logistic Regression",
+      "best_acc": 0.4571,
+      "best_std": 0.0056324497153475254,
+      "ci95": 0.0016007244978396007,
+      "ci95_bounds": [
+        0.4554992755021604,
+        0.4587007244978396
+      ],
+      "margin": -0.0039000000000000146,
+      "perm_pvalue": 0.2885572139303483,
+      "lr_acc": 0.4571,
+      "rf_acc": 0.36230000000000007
+    },
+    {
+      "target": "s[0][0] sign (positive vs not)",
+      "difficulty": "Hard",
+      "n_classes": 2,
+      "baseline": 0.659,
+      "best_model": "Logistic Regression",
+      "best_acc": 0.6567000000000001,
+      "best_std": 0.004585914548364153,
+      "ci95": 0.0013033024942171734,
+      "ci95_bounds": [
+        0.6553966975057829,
+        0.6580033024942172
+      ],
+      "margin": -0.0022999999999999687,
+      "perm_pvalue": 0.7562189054726368,
+      "lr_acc": 0.6567000000000001,
+      "rf_acc": 0.5620999999999999
+    },
+    {
+      "target": "s[0][0] exact value",
+      "difficulty": "Very Hard",
+      "n_classes": 3,
+      "baseline": 0.341,
+      "best_model": "Random Forest",
+      "best_acc": 0.3311,
+      "best_std": 0.029970904257976872,
+      "ci95": 0.008517636746480595,
+      "ci95_bounds": [
+        0.3225823632535194,
+        0.3396176367464806
+      ],
+      "margin": -0.00990000000000002,
+      "perm_pvalue": 0.43283582089552236,
+      "lr_acc": 0.32959999999999995,
+      "rf_acc": 0.3311
+    }
+  ]
+}

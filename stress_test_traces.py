@@ -108,17 +108,21 @@ else:
     print("  --> WARNING: q IS significantly correlated with secret_weight!")
 
 print("\nCorrelations of Features with Modulus q (by Tier):")
+per_feature_q = {}
 for tier_name, feats in [("Sender", SENDER_FEATURES), ("Receiver", RECEIVER_FEATURES), ("Channel", CHANNEL_FEATURES)]:
     print(f"\n  [{tier_name} Features vs q]")
     print(f"    {'Feature':<30}{'Pearson r vs q':>16}{'p-value':>12}  Confound Risk")
+    per_feature_q[tier_name] = {}
     for feat in feats:
         vals = np.array([r.get(feat, 0) for r in rows], dtype=float)
         if np.std(vals) > 0:
             r_val, p_val = sp_stats.pearsonr(q_vals, vals)
             risk = "HIGH (|r|>0.5)" if abs(r_val) > 0.5 else ("MODERATE" if abs(r_val) > 0.2 else "LOW")
             print(f"    {feat:<30}{r_val:>+16.4f}{p_val:>12.4e}  {risk}")
+            per_feature_q[tier_name][feat] = {"pearson_r": float(r_val), "p_value": float(p_val), "risk": risk}
         else:
             print(f"    {feat:<30}{'CONSTANT':>16}{'-':>12}  NONE")
+            per_feature_q[tier_name][feat] = {"pearson_r": None, "p_value": None, "risk": "NONE"}
 
 
 # ===========================================================================
@@ -143,6 +147,7 @@ def get_models():
 rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)
 
 tier_summary = {}
+tier_models = {}
 
 for tier_name, tier_features in TIERS.items():
     X = np.array([[r.get(f, 0) for f in tier_features] for r in rows], dtype=float)
@@ -166,6 +171,7 @@ for tier_name, tier_features in TIERS.items():
     models = get_models()
     best_real_acc = 0.0
     best_model_name = ""
+    tier_models[tier_name] = {}
 
     for model_name, clf in models.items():
         # 1. Real CV
@@ -199,6 +205,18 @@ for tier_name, tier_features in TIERS.items():
         flag = " ***" if gap > 0.10 else ""
         print(f"{model_name:<14} | {real_str:<30} | {shuf_str:<22} | {gap_str:<15} | {q_str:<16}{flag}")
 
+        tier_models[tier_name][model_name] = {
+            "real_acc": float(r_mean),
+            "real_std": float(r_std),
+            "real_min": float(r_min),
+            "real_max": float(r_max),
+            "shuffled_acc": float(s_mean),
+            "shuffled_std": float(s_std),
+            "gap_real_minus_shuffled": float(gap),
+            "q_resid_acc": float(q_mean),
+            "q_resid_std": float(q_std),
+        }
+
         if r_mean > best_real_acc:
             best_real_acc = r_mean
             best_model_name = model_name
@@ -208,10 +226,10 @@ for tier_name, tier_features in TIERS.items():
 
     tier_summary[tier_name] = {
         "best_model": best_model_name,
-        "best_real": best_real_acc,
-        "shuffled_acc": best_s_mean,
-        "gap": best_gap,
-        "q_controlled": best_q_mean,
+        "best_real": float(best_real_acc),
+        "shuffled_acc": float(best_s_mean),
+        "gap": float(best_gap),
+        "q_controlled": float(best_q_mean),
     }
 
 
@@ -244,4 +262,23 @@ print("\nInterpretation Rules:")
 print("1. If Net Gap (Real - Shuffled) ~ 0%, the tier contains ZERO predictive signal.")
 print("2. If Net Gap > 10% and q-Controlled maintains accuracy, the leakage is genuine and NOT a confound.")
 print("3. Check the CV std: a narrow spread (e.g. ±3%) indicates stability across folds.")
+
+with open("results/stress_test_traces.json", "w") as f:
+    json.dump({
+        "n_trials": N_TRIALS,
+        "median_secret_weight": float(median_w),
+        "class_counts": {"0": int(np.sum(y == 0)), "1": int(np.sum(y == 1))},
+        "majority_baseline": float(baseline_acc),
+        "seed": 42,
+        "cv": "RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)",
+        "confound_q_vs_secret_weight": {
+            "pearson_r": float(r_q_sw),
+            "pearson_p": float(p_q_sw),
+            "spearman_rho": float(rho_q_sw),
+            "spearman_p": float(p_rho_q_sw),
+        },
+        "per_feature_q_correlations": per_feature_q,
+        "tier_models": tier_models,
+        "tier_summary": tier_summary,
+    }, f, indent=2)
 

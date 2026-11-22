@@ -22,8 +22,11 @@ This mirrors attack_c_timing_groundwork.py in structure and output format,
 so results can sit side by side in the report.
 """
 
+import os
 import tracemalloc
 import numpy as np
+from scipy import stats as sp_stats
+import attack_c_stats
 from qrng_handler import QRNGSource
 from qeqske_core import QEQSKERandom, key_gen, encrypt_it, decrypt_it
 
@@ -54,8 +57,6 @@ def measure_keygen_memory(numbers, n=4, k=2, num_trials=20, verbose=True):
             if verbose:
                 print(f"  Stopping early at trial {trial}: ran out of QRNG numbers")
             break
-        cursor += 200
-
         qrng = QRNGSource(numbers=batch)
         rng = QEQSKERandom(qrng)
 
@@ -65,6 +66,8 @@ def measure_keygen_memory(numbers, n=4, k=2, num_trials=20, verbose=True):
         snapshot = tracemalloc.take_snapshot()
         num_blocks = sum(stat.count for stat in snapshot.statistics("lineno"))
         tracemalloc.stop()
+
+        cursor += qrng.total_consumed
 
         secret_weight, secret_sum = _secret_properties(keys["private_key"])
 
@@ -95,12 +98,11 @@ def measure_encrypt_memory(numbers, n=4, k=2, num_trials=20, message="Hi", verbo
     cursor = 0
 
     for trial in range(num_trials):
-        batch = numbers[cursor:cursor + 400]
-        if len(batch) < 150:
+        batch = numbers[cursor:cursor + 600]
+        if len(batch) < 450:
             if verbose:
                 print(f"  Stopping early at trial {trial}: ran out of QRNG numbers")
             break
-        cursor += 400
 
         qrng = QRNGSource(numbers=batch)
         rng = QEQSKERandom(qrng)
@@ -112,6 +114,8 @@ def measure_encrypt_memory(numbers, n=4, k=2, num_trials=20, message="Hi", verbo
         snapshot = tracemalloc.take_snapshot()
         num_blocks = sum(stat.count for stat in snapshot.statistics("lineno"))
         tracemalloc.stop()
+
+        cursor += qrng.total_consumed
 
         secret_weight, secret_sum = _secret_properties(keys["private_key"])
 
@@ -163,16 +167,51 @@ def _report(results, stage_name):
     print(f"  approximation available without specialized profiling hardware.")
 
 
+def _summarize_ram(results):
+    peaks = [r["peak_memory_bytes"] for r in results]
+    allocs = [r["num_allocations"] for r in results]
+    weights = [r["secret_weight"] for r in results]
+    if len(set(weights)) > 1 and len(set(peaks)) > 1:
+        r_peak, p_peak = sp_stats.pearsonr(peaks, weights)
+    else:
+        r_peak, p_peak = 0.0, 1.0
+    if len(set(weights)) > 1 and len(set(allocs)) > 1:
+        r_alloc, p_alloc = sp_stats.pearsonr(allocs, weights)
+    else:
+        r_alloc, p_alloc = 0.0, 1.0
+    return {
+        "n_trials": int(len(results)),
+        "mean_peak_bytes": float(np.mean(peaks)),
+        "std_peak_bytes": float(np.std(peaks)),
+        "mean_allocations": float(np.mean(allocs)),
+        "pearson_peak_r": float(r_peak),
+        "pearson_peak_p": float(p_peak),
+        "pearson_alloc_r": float(r_alloc),
+        "pearson_alloc_p": float(p_alloc),
+    }
+
+
 if __name__ == "__main__":
-    with open("sample_qrng_batch.txt") as f:
+    dataset_path = "qrng_combined.txt" if os.path.exists("qrng_combined.txt") else "sample_qrng_batch.txt"
+    with open(dataset_path) as f:
         numbers = [int(x.strip()) for x in f.read().strip().split(",") if x.strip()]
 
     print("\n" + "#" * 70)
-    print("ATTACK C (Part 2): RAM Side-Channel — key_gen()")
+    print(f"ATTACK C (Part 2): RAM Side-Channel — key_gen() [{dataset_path}]")
     print("#" * 70)
-    measure_keygen_memory(numbers, n=4, k=2, num_trials=5)
+    kg_res = measure_keygen_memory(numbers, n=4, k=2, num_trials=100)
 
     print("\n" + "#" * 70)
-    print("ATTACK C (Part 2): RAM Side-Channel — encrypt_it()")
+    print(f"ATTACK C (Part 2): RAM Side-Channel — encrypt_it() [{dataset_path}]")
     print("#" * 70)
-    measure_encrypt_memory(numbers, n=4, k=2, num_trials=5)
+    enc_res = measure_encrypt_memory(numbers, n=4, k=2, num_trials=100)
+
+    attack_c_stats.update_json_results(
+        "results/attack_c_ram_cache.json",
+        "ram_sidechannel",
+        {
+            "dataset": dataset_path,
+            "key_gen": _summarize_ram(kg_res),
+            "encrypt_it": _summarize_ram(enc_res),
+        },
+    )

@@ -22,6 +22,7 @@ baseline -- per the reviewer's request for repeated CV rather than a
 single train/test split.
 """
 
+import json
 import time
 import tracemalloc
 import os
@@ -131,9 +132,22 @@ def evaluate_target(X, y, target_name, difficulty, n_splits=5, n_repeats=10):
     attack_c_stats.update_json_results("results/attack_c_full_stats.json", f"progressive_ml_{target_name}_LR", ml_stats_lr)
     attack_c_stats.update_json_results("results/attack_c_full_stats.json", f"progressive_ml_{target_name}_RF", ml_stats_rf)
 
-    return {"target": target_name, "difficulty": difficulty, "n_classes": n_classes,
-            "baseline": baseline, "best_acc": best_acc, "best_std": best_std,
-            "ci95": ci_margin, "margin": margin}
+    best_model = "Logistic Regression" if acc_lr_mean >= acc_rf_mean else "Random Forest"
+    return {
+        "target": target_name,
+        "difficulty": difficulty,
+        "n_classes": int(n_classes),
+        "baseline": float(baseline),
+        "best_model": best_model,
+        "best_acc": float(best_acc),
+        "best_std": float(best_std),
+        "ci95": float(ci_margin),
+        "ci95_bounds": [float(ci_low), float(ci_high)],
+        "margin": float(margin),
+        "perm_pvalue": float(best_stats["permutation_test"]["pvalue"]),
+        "lr_acc": float(acc_lr_mean),
+        "rf_acc": float(acc_rf_mean),
+    }
 
 
 if __name__ == "__main__":
@@ -170,5 +184,14 @@ if __name__ == "__main__":
 
     y_exact = (s00_vals + 1).astype(int)  # map {-1,0,1} -> {0,1,2}
     results.append(evaluate_target(X, y_exact, "s[0][0] exact value", "Very Hard"))
+
+    os.makedirs("results", exist_ok=True)
+    with open("results/attack_c_progressive_difficulty.json", "w") as f:
+        json.dump({
+            "n_trials": len(rows),
+            "seed": 42,
+            "cv": "RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)",
+            "targets": results,
+        }, f, indent=2)
 
     print("\nDone.")

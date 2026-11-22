@@ -44,6 +44,8 @@ choice, not of this code, and it is why no result at these parameters may be
 read as evidence about LWE hardness.
 """
 
+import numpy as np
+
 from qrng_handler import QRNGSource
 
 
@@ -285,6 +287,37 @@ def decrypt_it(s, u, v_queue, q):
         dist_to_half = abs(val - q // 2)
         bits.append(0 if dist_to_0 < dist_to_half else 1)
 
+    return bits_to_string(bits)
+
+
+def decrypt_it_constant_time(s, u, v_queue, q):
+    """
+    Constant-time, branch-free Algorithm 10 decryption using fixed-width
+    NumPy int64 arithmetic and bitwise distance selection (no Python
+    bigint loop, no data-dependent branches). Supports both per-bit
+    u_queue of shape (B, k, n) and legacy single-u of shape (k, n).
+    """
+    s_arr = np.asarray(s, dtype=np.int64)
+    u_arr = np.asarray(u, dtype=np.int64)
+    v_arr = np.asarray(v_queue, dtype=np.int64)
+    q64 = np.int64(q)
+    half_q = q64 >> np.int64(1)
+
+    diff = (v_arr - np.matmul(u_arr, s_arr)) % q64
+    vals = diff[:, 0, 0]
+
+    # Branch-free min(vals, q - vals) and abs(vals - q // 2) in int64
+    comp = q64 - vals
+    m0 = (vals - comp) >> np.int64(63)
+    dist_to_0 = (vals & m0) | (comp & ~m0)
+
+    delta = vals - half_q
+    m1 = delta >> np.int64(63)
+    dist_to_half = (delta ^ m1) - m1
+
+    # bit = 0 if dist_to_0 < dist_to_half else 1
+    lt_mask = ((dist_to_0 - dist_to_half) >> np.int64(63)) & np.int64(1)
+    bits = (np.int64(1) - lt_mask).tolist()
     return bits_to_string(bits)
 
 

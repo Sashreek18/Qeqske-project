@@ -25,6 +25,8 @@ computation leak information about the secret?"
 import psutil
 import os
 import numpy as np
+from scipy import stats as sp_stats
+import attack_c_stats
 from qrng_handler import QRNGSource
 from qeqske_core import QEQSKERandom, key_gen, encrypt_it, decrypt_it
 
@@ -125,11 +127,11 @@ def measure_encrypt_cpu(numbers, n=4, k=2, num_trials=20, message="Hi", repeats_
     proc = psutil.Process(os.getpid())
     results = []
     cursor = 0
-    needed = repeats_per_trial * 60
+    needed = repeats_per_trial * 420
 
     for trial in range(num_trials):
         batch = numbers[cursor:cursor + needed]
-        if len(batch) < 200:
+        if len(batch) < 450:
             if verbose:
                 print(f"  Stopping early at trial {trial}: ran out of QRNG numbers")
             break
@@ -218,16 +220,51 @@ def _report(results, stage_name):
     print(f"  only what's available in a standard Python environment.")
 
 
+def _summarize_cpu(results):
+    user_times = [r["cpu_user_seconds_per_call"] for r in results]
+    sys_times = [r["cpu_system_seconds"] for r in results]
+    weights = [r["secret_weight"] for r in results]
+    if len(set(weights)) > 1 and len(set(user_times)) > 1:
+        r_user, p_user = sp_stats.pearsonr(user_times, weights)
+    else:
+        r_user, p_user = 0.0, 1.0
+    if len(set(weights)) > 1 and len(set(sys_times)) > 1:
+        r_sys, p_sys = sp_stats.pearsonr(sys_times, weights)
+    else:
+        r_sys, p_sys = 0.0, 1.0
+    return {
+        "n_trials": int(len(results)),
+        "reps_per_trial": int(results[0]["reps_done"]) if results else 0,
+        "mean_user_us_per_call": float(np.mean(user_times) * 1e6),
+        "std_user_us_per_call": float(np.std(user_times) * 1e6),
+        "pearson_user_r": float(r_user),
+        "pearson_user_p": float(p_user),
+        "pearson_sys_r": float(r_sys),
+        "pearson_sys_p": float(p_sys),
+    }
+
+
 if __name__ == "__main__":
-    with open("sample_qrng_batch.txt") as f:
+    dataset_path = "qrng_combined.txt" if os.path.exists("qrng_combined.txt") else "sample_qrng_batch.txt"
+    with open(dataset_path) as f:
         numbers = [int(x.strip()) for x in f.read().strip().split(",") if x.strip()]
 
     print("\n" + "#" * 70)
-    print("ATTACK C (Part 3): Cache/Power Proxy — key_gen()")
+    print(f"ATTACK C (Part 3): Cache/Power Proxy — key_gen() [{dataset_path}]")
     print("#" * 70)
-    measure_keygen_cpu(numbers, n=4, k=2, num_trials=5)
+    kg_res = measure_keygen_cpu(numbers, n=4, k=2, num_trials=20, repeats_per_trial=500)
 
     print("\n" + "#" * 70)
-    print("ATTACK C (Part 3): Cache/Power Proxy — encrypt_it()")
+    print(f"ATTACK C (Part 3): Cache/Power Proxy — encrypt_it() [{dataset_path}]")
     print("#" * 70)
-    measure_encrypt_cpu(numbers, n=4, k=2, num_trials=5)
+    enc_res = measure_encrypt_cpu(numbers, n=4, k=2, num_trials=20, repeats_per_trial=100)
+
+    attack_c_stats.update_json_results(
+        "results/attack_c_ram_cache.json",
+        "cache_sidechannel",
+        {
+            "dataset": dataset_path,
+            "key_gen": _summarize_cpu(kg_res),
+            "encrypt_it": _summarize_cpu(enc_res),
+        },
+    )

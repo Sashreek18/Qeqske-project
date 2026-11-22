@@ -1,0 +1,519 @@
+{
+  "n_trials": 500,
+  "median_secret_weight": 5.0,
+  "class_counts": {
+    "0": 277,
+    "1": 223
+  },
+  "majority_baseline": 0.554,
+  "seed": 42,
+  "cv": "RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)",
+  "confound_q_vs_secret_weight": {
+    "pearson_r": 0.03843331519756159,
+    "pearson_p": 0.39113494011089645,
+    "spearman_rho": 0.024034172992830085,
+    "spearman_p": 0.5918529523486845
+  },
+  "per_feature_q_correlations": {
+    "Sender": {
+      "enc_timing_us": {
+        "pearson_r": -0.043744974173388115,
+        "p_value": 0.32897206426752673,
+        "risk": "LOW"
+      },
+      "enc_cpu_user_us": {
+        "pearson_r": 0.03745433985943093,
+        "p_value": 0.40332280555091704,
+        "risk": "LOW"
+      },
+      "enc_ram_peak_bytes": {
+        "pearson_r": 0.32239044631839103,
+        "p_value": 1.4791100654233999e-13,
+        "risk": "MODERATE"
+      },
+      "enc_num_allocations": {
+        "pearson_r": 0.32823838834991625,
+        "p_value": 5.038611790039159e-14,
+        "risk": "MODERATE"
+      }
+    },
+    "Receiver": {
+      "dec_timing_us": {
+        "pearson_r": -0.020818296306197463,
+        "p_value": 0.6423637185519125,
+        "risk": "LOW"
+      },
+      "dec_cpu_user_us": {
+        "pearson_r": -0.013472461504488123,
+        "p_value": 0.7637858548361712,
+        "risk": "LOW"
+      },
+      "dec_ram_peak_bytes": {
+        "pearson_r": -0.004787312354556306,
+        "p_value": 0.9149633215228282,
+        "risk": "LOW"
+      },
+      "dec_num_allocations": {
+        "pearson_r": -0.07054270494658926,
+        "p_value": 0.11516462471028138,
+        "risk": "LOW"
+      }
+    },
+    "Channel": {
+      "num_ct_blocks": {
+        "pearson_r": null,
+        "p_value": null,
+        "risk": "NONE"
+      },
+      "u_frobenius_mean": {
+        "pearson_r": 0.9977290248718097,
+        "p_value": 0.0,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "u_frobenius_std": {
+        "pearson_r": 0.9576528992573841,
+        "p_value": 1.9638345160630132e-271,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "u_mean": {
+        "pearson_r": 0.9974528014069364,
+        "p_value": 0.0,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "u_std": {
+        "pearson_r": 0.9876956695457627,
+        "p_value": 0.0,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "u_min": {
+        "pearson_r": 0.26221878398634896,
+        "p_value": 2.6295398248242017e-09,
+        "risk": "MODERATE"
+      },
+      "u_max": {
+        "pearson_r": 0.9998604108430083,
+        "p_value": 0.0,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "u_median": {
+        "pearson_r": 0.9789714404037253,
+        "p_value": 0.0,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "u_skewness": {
+        "pearson_r": -0.022781473352210063,
+        "p_value": 0.6113129511843478,
+        "risk": "LOW"
+      },
+      "u_kurtosis": {
+        "pearson_r": -0.047248208780925144,
+        "p_value": 0.2916784350608718,
+        "risk": "LOW"
+      },
+      "v_norm_mean": {
+        "pearson_r": 0.9965165126696327,
+        "p_value": 0.0,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "v_norm_std": {
+        "pearson_r": 0.9592840397142741,
+        "p_value": 1.3637774653145332e-275,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "v_mean": {
+        "pearson_r": 0.995144247791328,
+        "p_value": 0.0,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "v_std": {
+        "pearson_r": 0.9893643636221053,
+        "p_value": 0.0,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "v_min": {
+        "pearson_r": 0.27620087766833934,
+        "p_value": 3.316423733491202e-10,
+        "risk": "MODERATE"
+      },
+      "v_max": {
+        "pearson_r": 0.9998550278538341,
+        "p_value": 0.0,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "v_median": {
+        "pearson_r": 0.9823477254242419,
+        "p_value": 0.0,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "v_skewness": {
+        "pearson_r": -0.09381254246759986,
+        "p_value": 0.0359857345351337,
+        "risk": "LOW"
+      },
+      "v_kurtosis": {
+        "pearson_r": 0.055441728134062666,
+        "p_value": 0.2158778123917997,
+        "risk": "LOW"
+      },
+      "ct_total_elements": {
+        "pearson_r": null,
+        "p_value": null,
+        "risk": "NONE"
+      },
+      "ct_mean": {
+        "pearson_r": 0.9986032440616126,
+        "p_value": 0.0,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "ct_std": {
+        "pearson_r": 0.9913362139249541,
+        "p_value": 0.0,
+        "risk": "HIGH (|r|>0.5)"
+      },
+      "ct_entropy_approx": {
+        "pearson_r": -0.027144069192245768,
+        "p_value": 0.5448121010718332,
+        "risk": "LOW"
+      },
+      "u_mean_over_q": {
+        "pearson_r": -0.024988205184812463,
+        "p_value": 0.5772256061434464,
+        "risk": "LOW"
+      },
+      "v_mean_over_q": {
+        "pearson_r": 0.10837107921860156,
+        "p_value": 0.015336677567769016,
+        "risk": "LOW"
+      },
+      "ct_coefficient_of_variation": {
+        "pearson_r": 0.029353101182807154,
+        "p_value": 0.5125619961972419,
+        "risk": "LOW"
+      }
+    }
+  },
+  "tier_models": {
+    "Tier 1a: Sender Only": {
+      "Logistic Reg": {
+        "real_acc": 0.5367999999999999,
+        "real_std": 0.020341091416145807,
+        "real_min": 0.48,
+        "real_max": 0.56,
+        "shuffled_acc": 0.5386,
+        "shuffled_std": 0.022804385543136227,
+        "gap_real_minus_shuffled": -0.0018000000000000238,
+        "q_resid_acc": 0.5374,
+        "q_resid_std": 0.022521989254948162
+      },
+      "Random Forest": {
+        "real_acc": 0.5292,
+        "real_std": 0.04165765235824025,
+        "real_min": 0.45,
+        "real_max": 0.61,
+        "shuffled_acc": 0.5244,
+        "shuffled_std": 0.034707924167256106,
+        "gap_real_minus_shuffled": 0.0048000000000000265,
+        "q_resid_acc": 0.5024000000000001,
+        "q_resid_std": 0.04501377566923265
+      },
+      "SVM (RBF)": {
+        "real_acc": 0.5359999999999999,
+        "real_std": 0.026981475126464094,
+        "real_min": 0.46,
+        "real_max": 0.59,
+        "shuffled_acc": 0.551,
+        "shuffled_std": 0.011357816691600542,
+        "gap_real_minus_shuffled": -0.015000000000000124,
+        "q_resid_acc": 0.5349999999999999,
+        "q_resid_std": 0.026324893162176382
+      },
+      "MLP (16,8)": {
+        "real_acc": 0.519,
+        "real_std": 0.036345563690772506,
+        "real_min": 0.41,
+        "real_max": 0.57,
+        "shuffled_acc": 0.5478000000000001,
+        "shuffled_std": 0.01676782633497854,
+        "gap_real_minus_shuffled": -0.028800000000000048,
+        "q_resid_acc": 0.5232,
+        "q_resid_std": 0.037333095237336016
+      },
+      "Grad Boost": {
+        "real_acc": 0.5364,
+        "real_std": 0.04198856987324049,
+        "real_min": 0.46,
+        "real_max": 0.61,
+        "shuffled_acc": 0.5379999999999999,
+        "shuffled_std": 0.03352610922848042,
+        "gap_real_minus_shuffled": -0.0015999999999999348,
+        "q_resid_acc": 0.5316000000000001,
+        "q_resid_std": 0.05251133211031691
+      }
+    },
+    "Tier 1b: Receiver Only": {
+      "Logistic Reg": {
+        "real_acc": 0.556,
+        "real_std": 0.04044749683231336,
+        "real_min": 0.44,
+        "real_max": 0.67,
+        "shuffled_acc": 0.5498000000000001,
+        "shuffled_std": 0.01581012333917734,
+        "gap_real_minus_shuffled": 0.006199999999999983,
+        "q_resid_acc": 0.5594,
+        "q_resid_std": 0.04066497264231219
+      },
+      "Random Forest": {
+        "real_acc": 0.8042,
+        "real_std": 0.032685776723217076,
+        "real_min": 0.75,
+        "real_max": 0.9,
+        "shuffled_acc": 0.4836,
+        "shuffled_std": 0.04136471926654406,
+        "gap_real_minus_shuffled": 0.32060000000000005,
+        "q_resid_acc": 0.8170000000000001,
+        "q_resid_std": 0.032939338184001195
+      },
+      "SVM (RBF)": {
+        "real_acc": 0.6188,
+        "real_std": 0.06310752728478593,
+        "real_min": 0.51,
+        "real_max": 0.79,
+        "shuffled_acc": 0.5424,
+        "shuffled_std": 0.022852570971337124,
+        "gap_real_minus_shuffled": 0.07640000000000002,
+        "q_resid_acc": 0.5902000000000001,
+        "q_resid_std": 0.04144828102587608
+      },
+      "MLP (16,8)": {
+        "real_acc": 0.7803999999999999,
+        "real_std": 0.049637082911871445,
+        "real_min": 0.68,
+        "real_max": 0.87,
+        "shuffled_acc": 0.5406,
+        "shuffled_std": 0.02572236381050545,
+        "gap_real_minus_shuffled": 0.2397999999999999,
+        "q_resid_acc": 0.7694,
+        "q_resid_std": 0.046017822634279434
+      },
+      "Grad Boost": {
+        "real_acc": 0.8218,
+        "real_std": 0.03380473339637512,
+        "real_min": 0.75,
+        "real_max": 0.9,
+        "shuffled_acc": 0.5184,
+        "shuffled_std": 0.034138541269363,
+        "gap_real_minus_shuffled": 0.3034,
+        "q_resid_acc": 0.8268,
+        "q_resid_std": 0.035124919928734344
+      }
+    },
+    "Tier 1c: Channel Only": {
+      "Logistic Reg": {
+        "real_acc": 0.5258,
+        "real_std": 0.04133231181533402,
+        "real_min": 0.44,
+        "real_max": 0.62,
+        "shuffled_acc": 0.5339999999999999,
+        "shuffled_std": 0.03237282811247729,
+        "gap_real_minus_shuffled": -0.008199999999999874,
+        "q_resid_acc": 0.5214,
+        "q_resid_std": 0.040497407324420163
+      },
+      "Random Forest": {
+        "real_acc": 0.494,
+        "real_std": 0.04617358552246079,
+        "real_min": 0.39,
+        "real_max": 0.6,
+        "shuffled_acc": 0.49560000000000004,
+        "shuffled_std": 0.042528108352006454,
+        "gap_real_minus_shuffled": -0.0016000000000000458,
+        "q_resid_acc": 0.49160000000000004,
+        "q_resid_std": 0.036130873224985864
+      },
+      "SVM (RBF)": {
+        "real_acc": 0.5284,
+        "real_std": 0.03276339420756037,
+        "real_min": 0.46,
+        "real_max": 0.59,
+        "shuffled_acc": 0.5118,
+        "shuffled_std": 0.03409926685428883,
+        "gap_real_minus_shuffled": 0.016599999999999948,
+        "q_resid_acc": 0.5014,
+        "q_resid_std": 0.03857512151633486
+      },
+      "MLP (16,8)": {
+        "real_acc": 0.4856,
+        "real_std": 0.042622060015911956,
+        "real_min": 0.4,
+        "real_max": 0.58,
+        "shuffled_acc": 0.523,
+        "shuffled_std": 0.047675989764240874,
+        "gap_real_minus_shuffled": -0.037400000000000044,
+        "q_resid_acc": 0.48640000000000005,
+        "q_resid_std": 0.03902614508249566
+      },
+      "Grad Boost": {
+        "real_acc": 0.494,
+        "real_std": 0.040595566260368886,
+        "real_min": 0.41,
+        "real_max": 0.59,
+        "shuffled_acc": 0.5,
+        "shuffled_std": 0.03964845520319803,
+        "gap_real_minus_shuffled": -0.006000000000000005,
+        "q_resid_acc": 0.49920000000000003,
+        "q_resid_std": 0.04484818836920841
+      }
+    },
+    "Tier 2: Sender + Receiver": {
+      "Logistic Reg": {
+        "real_acc": 0.5546,
+        "real_std": 0.04405496566790172,
+        "real_min": 0.44,
+        "real_max": 0.64,
+        "shuffled_acc": 0.5336000000000001,
+        "shuffled_std": 0.02613503395827142,
+        "gap_real_minus_shuffled": 0.020999999999999908,
+        "q_resid_acc": 0.5542,
+        "q_resid_std": 0.04354721575485623
+      },
+      "Random Forest": {
+        "real_acc": 0.8162,
+        "real_std": 0.034864882044831284,
+        "real_min": 0.72,
+        "real_max": 0.88,
+        "shuffled_acc": 0.5116,
+        "shuffled_std": 0.04134537459015217,
+        "gap_real_minus_shuffled": 0.3046,
+        "q_resid_acc": 0.8129999999999998,
+        "q_resid_std": 0.04045985664828781
+      },
+      "SVM (RBF)": {
+        "real_acc": 0.5836,
+        "real_std": 0.03392698041382404,
+        "real_min": 0.5,
+        "real_max": 0.66,
+        "shuffled_acc": 0.5398000000000001,
+        "shuffled_std": 0.02073547684525244,
+        "gap_real_minus_shuffled": 0.04379999999999995,
+        "q_resid_acc": 0.5878,
+        "q_resid_std": 0.04006444808056139
+      },
+      "MLP (16,8)": {
+        "real_acc": 0.7542,
+        "real_std": 0.05079724401973004,
+        "real_min": 0.65,
+        "real_max": 0.86,
+        "shuffled_acc": 0.5018,
+        "shuffled_std": 0.04274061300449492,
+        "gap_real_minus_shuffled": 0.25239999999999996,
+        "q_resid_acc": 0.7339999999999998,
+        "q_resid_std": 0.049274739979019676
+      },
+      "Grad Boost": {
+        "real_acc": 0.8198000000000001,
+        "real_std": 0.029899163867907728,
+        "real_min": 0.74,
+        "real_max": 0.88,
+        "shuffled_acc": 0.5336,
+        "shuffled_std": 0.0453766459756558,
+        "gap_real_minus_shuffled": 0.2862000000000001,
+        "q_resid_acc": 0.8301999999999999,
+        "q_resid_std": 0.035804468994805654
+      }
+    },
+    "Tier 3: ALL Combined": {
+      "Logistic Reg": {
+        "real_acc": 0.555,
+        "real_std": 0.04355456348076513,
+        "real_min": 0.46,
+        "real_max": 0.66,
+        "shuffled_acc": 0.5082,
+        "shuffled_std": 0.03496798535803858,
+        "gap_real_minus_shuffled": 0.046800000000000064,
+        "q_resid_acc": 0.552,
+        "q_resid_std": 0.04498888751680797
+      },
+      "Random Forest": {
+        "real_acc": 0.7992000000000001,
+        "real_std": 0.03486201371120148,
+        "real_min": 0.71,
+        "real_max": 0.86,
+        "shuffled_acc": 0.48900000000000005,
+        "shuffled_std": 0.04414748010928824,
+        "gap_real_minus_shuffled": 0.3102000000000001,
+        "q_resid_acc": 0.7746,
+        "q_resid_std": 0.04011034779205986
+      },
+      "SVM (RBF)": {
+        "real_acc": 0.5519999999999999,
+        "real_std": 0.0370944739819828,
+        "real_min": 0.46,
+        "real_max": 0.62,
+        "shuffled_acc": 0.5062,
+        "shuffled_std": 0.03565893997302781,
+        "gap_real_minus_shuffled": 0.04579999999999995,
+        "q_resid_acc": 0.5479999999999999,
+        "q_resid_std": 0.03810511776651528
+      },
+      "MLP (16,8)": {
+        "real_acc": 0.5238,
+        "real_std": 0.046212119622454015,
+        "real_min": 0.44,
+        "real_max": 0.61,
+        "shuffled_acc": 0.5176000000000001,
+        "shuffled_std": 0.05601999642984636,
+        "gap_real_minus_shuffled": 0.006199999999999983,
+        "q_resid_acc": 0.5106,
+        "q_resid_std": 0.04211460554249559
+      },
+      "Grad Boost": {
+        "real_acc": 0.8195999999999999,
+        "real_std": 0.036930204440268115,
+        "real_min": 0.74,
+        "real_max": 0.9,
+        "shuffled_acc": 0.4898000000000001,
+        "shuffled_std": 0.039572212472895676,
+        "gap_real_minus_shuffled": 0.32979999999999976,
+        "q_resid_acc": 0.8166000000000001,
+        "q_resid_std": 0.04008041915948484
+      }
+    }
+  },
+  "tier_summary": {
+    "Tier 1a: Sender Only": {
+      "best_model": "Logistic Reg",
+      "best_real": 0.5367999999999999,
+      "shuffled_acc": 0.5386,
+      "gap": -0.0018000000000000238,
+      "q_controlled": 0.5374
+    },
+    "Tier 1b: Receiver Only": {
+      "best_model": "Grad Boost",
+      "best_real": 0.8218,
+      "shuffled_acc": 0.5184,
+      "gap": 0.3034,
+      "q_controlled": 0.8268
+    },
+    "Tier 1c: Channel Only": {
+      "best_model": "SVM (RBF)",
+      "best_real": 0.5284,
+      "shuffled_acc": 0.5118,
+      "gap": 0.016599999999999948,
+      "q_controlled": 0.5014
+    },
+    "Tier 2: Sender + Receiver": {
+      "best_model": "Grad Boost",
+      "best_real": 0.8198000000000001,
+      "shuffled_acc": 0.5336,
+      "gap": 0.2862000000000001,
+      "q_controlled": 0.8301999999999999
+    },
+    "Tier 3: ALL Combined": {
+      "best_model": "Grad Boost",
+      "best_real": 0.8195999999999999,
+      "shuffled_acc": 0.4898000000000001,
+      "gap": 0.32979999999999976,
+      "q_controlled": 0.8166000000000001
+    }
+  }
+}
