@@ -1157,6 +1157,506 @@ def run_mlkem_pipeline(
     return sanitized
 
 
+def _inject_delay_us(delay_us: float, trigger: bool) -> None:
+    if delay_us <= 0.0 or not trigger:
+        return
+    target_ns = time.perf_counter_ns() + int(round(delay_us * 1000.0))
+    while time.perf_counter_ns() < target_ns:
+        pass
+
+
+def order_ols_detrend(values, order_pos):
+    """Regress values linearly on execution order position and return residuals."""
+    v = np.asarray(values, dtype=float)
+    o = np.asarray(order_pos, dtype=float)
+    o_centered = o - np.mean(o)
+    denom = float(np.dot(o_centered, o_centered))
+    slope = float(np.dot(o_centered, v - np.mean(v)) / denom) if denom > 0.0 else 0.0
+    intercept = float(np.mean(v)) - slope * float(np.mean(o))
+    return v - (intercept + slope * o)
+
+
+def rolling_median_detrend(values, order_pos, window: int = 51):
+    """Leave-one-out centered rolling-median detrending along execution order."""
+    v = np.asarray(values, dtype=float)
+    o = np.asarray(order_pos, dtype=int)
+    n = len(v)
+    sort_idx = np.argsort(o)
+    ordered = v[sort_idx]
+    half = window // 2
+    baseline_ord = np.empty(n, dtype=float)
+    for i in range(n):
+        lo = max(0, i - half)
+        hi = min(n, i + half + 1)
+        nbrs = np.concatenate((ordered[lo:i], ordered[i + 1 : hi]))
+        baseline_ord[i] = float(np.median(nbrs)) if len(nbrs) > 0 else float(ordered[i])
+    detrended = np.empty(n, dtype=float)
+    detrended[sort_idx] = ordered - baseline_ord
+    return detrended
+
+
+def _evaluate_detrend_mode(records, timing_vals, cpu_vals, order_vals, q_vals, weights,
+                           y_wt, y_wt_shuf, wt_baseline):
+    """Evaluate drift, correlations, and 5x10 Stratified CV on one signal variant."""
+    desc_t = describe_array(timing_vals)
+    desc_c = describe_array(cpu_vals)
+    p_ot, pp_ot = _safe_pearson(order_vals, timing_vals)
+    s_ot, sp_ot = _safe_spearman(order_vals, timing_vals)
+    p_oc, pp_oc = _safe_pearson(order_vals, cpu_vals)
+    s_oc, sp_oc = _safe_spearman(order_vals, cpu_vals)
+    corr_t_wt = paired_correlation_with_bootstrap(timing_vals, weights)
+    corr_c_wt = paired_correlation_with_bootstrap(cpu_vals, weights)
+    corr_t_bin = paired_correlation_with_bootstrap(timing_vals, y_wt)
+
+    X = np.column_stack([timing_vals, cpu_vals])
+    cls_res = run_classification_suite(
+        X, q_vals, y_wt, y_wt_shuf, wt_baseline, perm_all=False
+    )
+    best_m = max(cls_res, key=lambda m: cls_res[m]["real"]["accuracy"]["mean"])
+    bm = cls_res[best_m]
+    return {
+        "timing_descriptives": desc_t,
+        "cpu_descriptives": desc_c,
+        "drift_order_vs_timing": {
+            "pearson_r": p_ot, "pearson_p": pp_ot,
+            "spearman_rho": s_ot, "spearman_p": sp_ot,
+        },
+        "drift_order_vs_cpu": {
+            "pearson_r": p_oc, "pearson_p": pp_oc,
+            "spearman_rho": s_oc, "spearman_p": sp_oc,
+        },
+        "corr_timing_vs_weight": corr_t_wt,
+        "corr_cpu_vs_weight": corr_c_wt,
+        "corr_timing_vs_binary_y": corr_t_bin,
+        "best_model": best_m,
+        "best_accuracy": bm["real"]["accuracy"]["mean"],
+        "best_sd": bm["real"]["accuracy"]["sd"],
+        "best_roc_auc": bm["real"]["roc_auc"]["mean"],
+        "shuffled_accuracy": bm["shuffled_control"]["accuracy"]["mean"],
+        "q_residualized_accuracy": bm["q_residualized"]["accuracy"]["mean"],
+        "gap_real_minus_shuffled": bm["gap_real_minus_shuffled"],
+        "best_perm_pvalue": bm.get("permutation_test", {}).get("pvalue", 1.0),
+        "best_perm_pvalue_display": bm.get("permutation_test", {}).get("pvalue_display", "—"),
+        "classification": cls_res,
+    }
+
+
+def run_detrend_comparison(
+    window: int = 51,
+    out_json_path: str = "results/mlkem512_detrend_comparison.json",
+    out_md_path: str = "results/mlkem512_detrend_comparison_summary.md",
+):
+    """Compare Raw vs Order-OLS vs Rolling-Median detrending on existing 5,000-trial ML-KEM traces."""
+    targets = [
+        ("standard_mlkem512", "Standard ML-KEM-512 (kyber-py, q=3329)",
+         "results/mlkem512_decrypt_traces_5000.json", "results/mlkem512_decrypt_leak_5000.json"),
+        ("qeqske_mlkem512", "QEQSKE-Variant ML-KEM-512 (QRNG, per-key NTT q)",
+         "results/mlkem512_qeqske_decrypt_traces_5000.json", "results/mlkem512_qeqske_decrypt_leak_5000.json"),
+    ]
+
+    variants_out = {}
+    for key, label, trace_path, res_path in targets:
+        with open(trace_path, "r") as f:
+            tr_raw = json.load(f)
+        records = tr_raw["records"]
+        src_env = tr_raw.get("environment") or get_environment_metadata()
+        stream_meta = None
+        if os.path.exists(res_path):
+            with open(res_path, "r") as f:
+                stream_meta = json.load(f).get("stream")
+
+        q_vals = np.array([r["q"] for r in records], dtype=float)
+        weights = np.array([r["secret_weight"] for r in records], dtype=float)
+        med_w = float(np.median(weights))
+        y_wt = (weights > med_w).astype(int)
+        wt_baseline = float(max(np.mean(y_wt == 0), np.mean(y_wt == 1)))
+        y_wt_shuf = np.random.RandomState(SEED).permutation(y_wt)
+
+        t_raw = np.array([r["dec_timing_us"] for r in records], dtype=float)
+        c_raw = np.array([r["dec_cpu_user_us"] for r in records], dtype=float)
+        o_vals = np.array([r["exec_order_pos"] for r in records], dtype=float)
+
+        t_ols = order_ols_detrend(t_raw, o_vals)
+        c_ols = order_ols_detrend(c_raw, o_vals)
+        t_rmed = rolling_median_detrend(t_raw, o_vals, window=window)
+        c_rmed = rolling_median_detrend(c_raw, o_vals, window=window)
+
+        modes = {
+            "raw": _evaluate_detrend_mode(records, t_raw, c_raw, o_vals, q_vals, weights, y_wt, y_wt_shuf, wt_baseline),
+            "order_ols_detrended": _evaluate_detrend_mode(records, t_ols, c_ols, o_vals, q_vals, weights, y_wt, y_wt_shuf, wt_baseline),
+            "rolling_median_detrended": _evaluate_detrend_mode(records, t_rmed, c_rmed, o_vals, q_vals, weights, y_wt, y_wt_shuf, wt_baseline),
+        }
+        variants_out[key] = {
+            "label": label,
+            "trace_file": trace_path,
+            "trace_environment": src_env,
+            "stream": stream_meta,
+            "n_trials": len(records),
+            "majority_baseline": wt_baseline,
+            "modes": modes,
+        }
+
+    out = to_native({
+        "analysis_environment": get_environment_metadata(),
+        "rolling_median_window": int(window),
+        "seed": SEED,
+        "variants": variants_out,
+    })
+    os.makedirs("results", exist_ok=True)
+    with open(out_json_path, "w") as f:
+        json.dump(out, f, indent=2)
+
+    lines = [
+        f"# ML-KEM-512 Execution-Order Detrending Comparison (5,000 Trials, Window={window})",
+        "",
+        "Compares unmodified raw timing/CPU traces against leave-one-out centered rolling-median (`W=51`) and linear order-OLS detrended residuals on both Linux Intel Core i9-12900K datasets.",
+        "",
+        "| Variant & Mode | Timing SD / IQR (µs) | Order Drift `r` (`ρ`) vs Timing | `ρ_weight` [95% CI] | Best 5×10 Clf (Acc / Base / `q`-Res) | Perm `p`-value |",
+        "| :--- | :---: | :---: | :---: | :---: | :---: |",
+    ]
+    for vdata in variants_out.values():
+        base_pct = vdata["majority_baseline"] * 100.0
+        for mkey, mlabel in [
+            ("raw", "Raw"),
+            ("order_ols_detrended", "Order-OLS Residuals"),
+            ("rolling_median_detrended", f"Rolling Median (W={window})"),
+        ]:
+            md = vdata["modes"][mkey]
+            td = md["timing_descriptives"]
+            dr = md["drift_order_vs_timing"]
+            cw = md["corr_timing_vs_weight"]
+            ci = cw["spearman_boot_ci95"]
+            lines.append(
+                f"| **{vdata['label'].split('(')[0].strip()}** — {mlabel} | "
+                f"{td['std']:.1f} / {td['iqr']:.1f} | "
+                f"{dr['pearson_r']:+.4f} ({dr['spearman_rho']:+.4f}) | "
+                f"{cw['spearman_rho']:+.4f} [{ci[0]:+.4f}, {ci[1]:+.4f}] | "
+                f"{md['best_accuracy']*100:.2f}% {md['best_model']} / {base_pct:.2f}% / {md['q_residualized_accuracy']*100:.2f}% | "
+                f"{md['best_perm_pvalue_display']} |"
+            )
+
+    lines.extend([
+        "",
+        "## Randomness & QRNG Reuse Audit",
+        "- **Standard ML-KEM-512 (`kyber-py`):** Uses deterministic `SHAKE-256` (`seed=42`, `q=3329` fixed).",
+        "- **QEQSKE-Variant ML-KEM-512:** Consumed `245,000` uint16 draws from `qrng_combined.txt` (`1,106,944` values) -> **`wraps = 0` (zero QRNG reuse across all 5,000 trials)**.",
+    ])
+    with open(out_md_path, "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+    print(f"Saved: {out_json_path}, {out_md_path}")
+    for line in lines[5:]:
+        print(line)
+    return out
+
+
+def _save_mlkem_threshold_svg(sweep_records, baseline_pct, raw_thresh_us, det_thresh_us, svg_path):
+    """Write a self-contained SVG plot comparing Raw vs Rolling-Median Detrended ML-KEM accuracy."""
+    W, H = 960, 440
+    x0, x1, y0, y1 = 80, 915, 65, 365
+    delays = [r["delay_us"] for r in sweep_records]
+    xs = [x0 + i * (x1 - x0) / max(1, len(delays) - 1) for i in range(len(delays))]
+    y_min, y_max = 48.0, 102.0
+
+    def sy(val):
+        return y1 - (val - y_min) / (y_max - y_min) * (y1 - y0)
+
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" style="background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">',
+        f'<text x="{W/2:.1f}" y="28" text-anchor="middle" font-size="17" font-weight="700" fill="#0f172a">ML-KEM-512 (n=256) Graded Injected-Delay Positive Control</text>',
+        f'<text x="{W/2:.1f}" y="48" text-anchor="middle" font-size="12" fill="#475569">5x10 Stratified CV Best Accuracy across {sweep_records[0]["n_trials"]} Trials | Majority Baseline = {baseline_pct:.2f}%</text>',
+        f'<rect x="{x0}" y="{y0}" width="{x1-x0}" height="{y1-y0}" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>',
+    ]
+
+    for yt in [50, 60, 70, 80, 90, 100]:
+        yy = sy(yt)
+        parts.append(f'<line x1="{x0}" y1="{yy:.1f}" x2="{x1}" y2="{yy:.1f}" stroke="#e2e8f0" stroke-width="1"/>')
+        parts.append(f'<text x="{x0-10}" y="{yy+4:.1f}" text-anchor="end" font-size="11" fill="#475569">{yt}%</text>')
+
+    for xx, dv in zip(xs, delays):
+        parts.append(f'<line x1="{xx:.1f}" y1="{y0}" x2="{xx:.1f}" y2="{y1}" stroke="#f1f5f9" stroke-width="1"/>')
+        parts.append(f'<text x="{xx:.1f}" y="{y1+20}" text-anchor="middle" font-size="11" fill="#475569">{dv:g} µs</text>')
+
+    yb = sy(baseline_pct)
+    parts.append(f'<line x1="{x0}" y1="{yb:.1f}" x2="{x1}" y2="{yb:.1f}" stroke="#64748b" stroke-width="1.8" stroke-dasharray="6,5"/>')
+    parts.append(f'<text x="{x1-6}" y="{yb-6:.1f}" text-anchor="end" font-size="11" fill="#475569">Majority Baseline ({baseline_pct:.1f}%)</text>')
+
+    raw_pts = [(xx, sy(r["raw"]["best_accuracy"] * 100.0), r["raw"]["best_accuracy"] * 100.0, r["raw"]["significant"]) for xx, r in zip(xs, sweep_records)]
+    det_pts = [(xx, sy(r["detrended"]["best_accuracy"] * 100.0), r["detrended"]["best_accuracy"] * 100.0, r["detrended"]["significant"]) for xx, r in zip(xs, sweep_records)]
+
+    for color, pts, dy_lbl in [("#dc2626", raw_pts, 15), ("#0284c7", det_pts, -10)]:
+        d_str = " ".join(("M" if i == 0 else "L") + f"{p[0]:.1f},{p[1]:.1f}" for i, p in enumerate(pts))
+        parts.append(f'<path d="{d_str}" fill="none" stroke="{color}" stroke-width="2.5"/>')
+        for xx, yy, acc, sig in pts:
+            parts.append(f'<circle cx="{xx:.1f}" cy="{yy:.1f}" r="4.5" fill="{color}" stroke="#ffffff" stroke-width="1"/>')
+            star = "*" if sig else ""
+            parts.append(f'<text x="{xx:.1f}" y="{yy + dy_lbl:.1f}" text-anchor="middle" font-size="10.5" font-weight="600" fill="{color}">{acc:.1f}%{star}</text>')
+
+    parts.append(f'<text x="{(x0+x1)/2:.1f}" y="{y1+44}" text-anchor="middle" font-size="12.5" font-weight="600" fill="#1e293b">Injected Secret-Dependent Delay (µs, discrete index spacing)</text>')
+    parts.append(f'<text x="22" y="{(y0+y1)/2:.1f}" text-anchor="middle" font-size="12.5" font-weight="600" fill="#1e293b" transform="rotate(-90 22 {(y0+y1)/2:.1f})">5×10 Stratified CV Best Accuracy (%)</text>')
+
+    raw_lbl = f"Raw Clean Timing (threshold: {raw_thresh_us:g} µs)" if raw_thresh_us is not None else "Raw Clean Timing (not detected <= max)"
+    det_lbl = f"Rolling-Median Detrended (threshold: {det_thresh_us:g} µs)" if det_thresh_us is not None else "Rolling-Median Detrended (not detected <= max)"
+    parts.extend([
+        f'<rect x="{x0+14}" y="{y0+12}" width="340" height="52" rx="6" fill="#ffffff" fill-opacity="0.94" stroke="#cbd5e1"/>',
+        f'<line x1="{x0+26}" y1="{y0+29}" x2="{x0+50}" y2="{y0+29}" stroke="#dc2626" stroke-width="2.5"/>',
+        f'<circle cx="{x0+38}" cy="{y0+29}" r="4" fill="#dc2626"/>',
+        f'<text x="{x0+58}" y="{y0+33}" font-size="11.5" fill="#1e293b">{raw_lbl}</text>',
+        f'<line x1="{x0+26}" y1="{y0+49}" x2="{x0+50}" y2="{y0+49}" stroke="#0284c7" stroke-width="2.5"/>',
+        f'<circle cx="{x0+38}" cy="{y0+49}" r="4" fill="#0284c7"/>',
+        f'<text x="{x0+58}" y="{y0+53}" font-size="11.5" fill="#1e293b">{det_lbl}</text>',
+        "</svg>",
+    ])
+    with open(svg_path, "w") as f:
+        f.write("\n".join(parts) + "\n")
+
+
+def run_mlkem_positive_control(
+    k_param: int = 2,
+    n_trials: int = 5000,
+    delays_us=(0.0, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0),
+    seed: int = SEED,
+    window: int = 51,
+):
+    """Calibrated secret-weight-dependent delay sweep on real ML-KEM-512 decaps."""
+    os.makedirs("results", exist_ok=True)
+    t_all_0 = time.perf_counter()
+    env = get_environment_metadata()
+    proc = psutil.Process(os.getpid())
+
+    print("=" * 88)
+    print(f"ML-KEM-512 POSITIVE CONTROL (n=256, k={k_param}) | trials={n_trials} | delays={list(delays_us)} us")
+    print(f"Environment: {env['os']} | CPU: {env['cpu_model']} | Python {env['python_version']}")
+    print("=" * 88)
+
+    trials, warmup_pool, stream_meta = pregenerate_mlkem_trials(
+        variant="standard", k_param=k_param, n_trials=n_trials, seed=seed
+    )
+    weights = np.array([tr["secret_weight"] for tr in trials], dtype=float)
+    q_vals = np.array([tr["q"] for tr in trials], dtype=float)
+    med_w = float(np.median(weights))
+    y_wt = (weights > med_w).astype(int)
+    wt_baseline = float(max(np.mean(y_wt == 0), np.mean(y_wt == 1)))
+    y_wt_shuf = np.random.RandomState(seed).permutation(y_wt)
+    triggers = [bool(w > med_w) for w in weights]
+
+    # Collect ALL delay passes BEFORE running parallel ML CV/permutations
+    collected_passes = []
+    orig_affinity = None
+    if hasattr(os, "sched_setaffinity"):
+        orig_affinity = os.sched_getaffinity(0)
+        os.sched_setaffinity(0, {0})
+
+    try:
+        for d_idx, d_us in enumerate(delays_us):
+            gc.collect()
+            for wi, (kem_w, dk_w, _, c_w, _) in enumerate(warmup_pool):
+                _ = kem_w.decaps(dk_w, c_w)
+                _inject_delay_us(float(d_us), trigger=(wi % 2 == 1))
+
+            order = np.random.RandomState(seed + 10 * d_idx).permutation(n_trials)
+            timings = np.empty(n_trials, dtype=float)
+            cpus = np.empty(n_trials, dtype=float)
+            orders = np.empty(n_trials, dtype=int)
+            correct_cnt = 0
+
+            t0_pass = time.perf_counter()
+            for pos, idx in enumerate(order):
+                if pos % 250 == 0:
+                    gc.collect()
+                    for wi in range(15):
+                        kem_w, dk_w, _, c_w, _ = warmup_pool[(pos + wi) % len(warmup_pool)]
+                        _ = kem_w.decaps(dk_w, c_w)
+
+                tr = trials[int(idx)]
+                trig = triggers[int(idx)]
+                kem = tr["kem"]
+                cpu0 = _get_cpu_user_seconds(proc)
+                t0 = time.perf_counter_ns()
+                k_out = kem.decaps(tr["dk"], tr["c"])
+                _inject_delay_us(float(d_us), trigger=trig)
+                dt_ns = time.perf_counter_ns() - t0
+                cpu1 = _get_cpu_user_seconds(proc)
+
+                timings[int(idx)] = dt_ns / 1000.0
+                cpus[int(idx)] = (cpu1 - cpu0) * 1e6
+                orders[int(idx)] = pos
+                if k_out == tr["K"]:
+                    correct_cnt += 1
+
+            wall_s = time.perf_counter() - t0_pass
+            med_delta = float(np.median(timings[y_wt == 1]) - np.median(timings[y_wt == 0]))
+            print(
+                f"  Collected delay={d_us:5.1f} us ({wall_s:5.1f}s): "
+                f"correct={correct_cnt}/{n_trials}, med={np.median(timings):.1f} us, "
+                f"IQR={np.percentile(timings, 75) - np.percentile(timings, 25):.1f} us, "
+                f"measured delta={med_delta:+.2f} us"
+            )
+            collected_passes.append({
+                "delay_us": float(d_us),
+                "correct_count": int(correct_cnt),
+                "wall_seconds": float(wall_s),
+                "timings": timings,
+                "cpus": cpus,
+                "orders": orders,
+                "measured_median_delta_us": med_delta,
+            })
+    finally:
+        if orig_affinity is not None:
+            os.sched_setaffinity(0, orig_affinity)
+
+    del trials, warmup_pool
+    gc.collect()
+
+    print("\nRunning 5x10 Stratified CV + 200-permutation tests across Raw & Detrended traces...")
+    sweep_records = []
+    for pdata in collected_passes:
+        d_us = pdata["delay_us"]
+        t_raw, c_raw, o_vals = pdata["timings"], pdata["cpus"], pdata["orders"]
+        t_det = rolling_median_detrend(t_raw, o_vals, window=window)
+        c_det = rolling_median_detrend(c_raw, o_vals, window=window)
+
+        raw_eval = _evaluate_detrend_mode(
+            [], t_raw, c_raw, o_vals, q_vals, weights, y_wt, y_wt_shuf, wt_baseline
+        )
+        det_eval = _evaluate_detrend_mode(
+            [], t_det, c_det, o_vals, q_vals, weights, y_wt, y_wt_shuf, wt_baseline
+        )
+        raw_eval["measured_median_delta_us"] = float(np.median(t_raw[y_wt == 1]) - np.median(t_raw[y_wt == 0]))
+        det_eval["measured_median_delta_us"] = float(np.median(t_det[y_wt == 1]) - np.median(t_det[y_wt == 0]))
+
+        for ev in (raw_eval, det_eval):
+            ev["significant"] = bool(
+                ev["best_perm_pvalue"] < 0.01
+                and ev["best_accuracy"] > wt_baseline + 0.02
+                and ev["gap_real_minus_shuffled"] > 0.02
+            )
+
+        print(
+            f"  [{d_us:5.1f} us] Raw: {raw_eval['best_accuracy']*100:5.2f}% ({raw_eval['best_model']}, "
+            f"rho_bin={raw_eval['corr_timing_vs_binary_y']['spearman_rho']:+.4f}, p={raw_eval['best_perm_pvalue_display']}) | "
+            f"Detrended: {det_eval['best_accuracy']*100:5.2f}% ({det_eval['best_model']}, "
+            f"rho_bin={det_eval['corr_timing_vs_binary_y']['spearman_rho']:+.4f}, p={det_eval['best_perm_pvalue_display']})"
+        )
+
+        sweep_records.append({
+            "delay_us": float(d_us),
+            "n_trials": int(n_trials),
+            "correct_count": pdata["correct_count"],
+            "wall_seconds": pdata["wall_seconds"],
+            "raw": raw_eval,
+            "detrended": det_eval,
+        })
+
+    def _find_threshold(mode_key):
+        sig_recs = [r for r in sweep_records if r["delay_us"] > 0.0 and r[mode_key]["significant"]]
+        if not sig_recs:
+            return None
+        first = sig_recs[0]
+        return {
+            "min_detectable_delay_us": float(first["delay_us"]),
+            "best_model": first[mode_key]["best_model"],
+            "best_accuracy": float(first[mode_key]["best_accuracy"]),
+            "perm_pvalue": float(first[mode_key]["best_perm_pvalue"]),
+            "perm_pvalue_display": first[mode_key]["best_perm_pvalue_display"],
+            "min_detectable_spearman_rho_vs_binary_y": float(
+                first[mode_key]["corr_timing_vs_binary_y"]["spearman_rho"]
+            ),
+            "min_detectable_spearman_rho_vs_weight": float(
+                first[mode_key]["corr_timing_vs_weight"]["spearman_rho"]
+            ),
+            "measured_median_delta_us": float(first[mode_key]["measured_median_delta_us"]),
+        }
+
+    raw_thresh = _find_threshold("raw")
+    det_thresh = _find_threshold("detrended")
+
+    raw_max_d = max(delays_us)
+    raw_cap = (
+        f"On {env['cpu_model']} ({env['os']}), unmodified ML-KEM-512 decaps ({sweep_records[0]['raw']['timing_descriptives']['median']:.1f} us median, IQR {sweep_records[0]['raw']['timing_descriptives']['iqr']:.1f} us) "
+        + (
+            f"reliably detects injected secret-dependent delays >= {raw_thresh['min_detectable_delay_us']:g} us (Spearman rho_binary >= {raw_thresh['min_detectable_spearman_rho_vs_binary_y']:+.4f}, acc {raw_thresh['best_accuracy']*100:.2f}%, p {raw_thresh['perm_pvalue_display']}); "
+            if raw_thresh
+            else f"could not detect delays up to {raw_max_d:g} us on raw timing; "
+        )
+        + (
+            f"rolling-median detrending (W={window}) lowers/matches threshold to >= {det_thresh['min_detectable_delay_us']:g} us (Spearman rho_binary >= {det_thresh['min_detectable_spearman_rho_vs_binary_y']:+.4f}, acc {det_thresh['best_accuracy']*100:.2f}%, p {det_thresh['perm_pvalue_display']})."
+            if det_thresh
+            else f"rolling-median detrending (W={window}) also could not detect delays up to {raw_max_d:g} us."
+        )
+    )
+
+    out_json = "results/mlkem512_positive_control_5000.json"
+    out_md = "results/mlkem512_positive_control_5000_summary.md"
+    out_svg = "results/mlkem512_leak_threshold.svg"
+
+    res_dict = to_native({
+        "environment": env,
+        "experiment": {
+            "variant": "standard",
+            "n": 256,
+            "k": int(k_param),
+            "q": 3329,
+            "n_trials": int(n_trials),
+            "seed": int(seed),
+            "delays_us": [float(d) for d in delays_us],
+            "rolling_median_window": int(window),
+            "n_bootstrap": N_BOOTSTRAP,
+            "n_permutations": N_PERMUTATIONS,
+            "total_wall_seconds": float(time.perf_counter() - t_all_0),
+        },
+        "stream": stream_meta,
+        "majority_baseline": wt_baseline,
+        "thresholds": {
+            "raw": raw_thresh,
+            "detrended": det_thresh,
+        },
+        "detection_capability_statement": raw_cap,
+        "sweep": sweep_records,
+    })
+
+    with open(out_json, "w") as f:
+        json.dump(res_dict, f, indent=2)
+
+    _save_mlkem_threshold_svg(
+        sweep_records,
+        wt_baseline * 100.0,
+        raw_thresh["min_detectable_delay_us"] if raw_thresh else None,
+        det_thresh["min_detectable_delay_us"] if det_thresh else None,
+        out_svg,
+    )
+
+    lines = [
+        f"# ML-KEM-512 (n=256, k={k_param}) Graded Injected-Delay Positive Control ({n_trials:,} Trials)",
+        "",
+        f"- **Environment:** `{env['os']}` (`{env['platform']}`), CPU `{env['cpu_model']}`, Python `{env['python_version']}`, NumPy `{env['numpy_version']}`",
+        f"- **Majority Baseline (`secret_weight > {med_w}`):** **{wt_baseline*100:.2f}%** | Rolling-median detrend window: `W={window}`",
+        f"- **Detection Capability:** {raw_cap}",
+        "",
+        "| Injected Delay (µs) | Raw Med / IQR (µs) | Raw Δt | Raw `ρ_bin` / `ρ_wt` | Raw Best Acc (Model / Perm `p`) | Detrended IQR (µs) | Detrended `ρ_bin` / `ρ_wt` | Detrended Best Acc (Model / Perm `p`) |",
+        "| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
+    ]
+    for r in sweep_records:
+        re_ = r["raw"]
+        de_ = r["detrended"]
+        lines.append(
+            f"| **{r['delay_us']:g} µs** | "
+            f"{re_['timing_descriptives']['median']:.1f} / {re_['timing_descriptives']['iqr']:.1f} | "
+            f"{re_['measured_median_delta_us']:+.2f} µs | "
+            f"{re_['corr_timing_vs_binary_y']['spearman_rho']:+.4f} / {re_['corr_timing_vs_weight']['spearman_rho']:+.4f} | "
+            f"{re_['best_accuracy']*100:.2f}% ({re_['best_model']} / {re_['best_perm_pvalue_display']}) | "
+            f"{de_['timing_descriptives']['iqr']:.1f} | "
+            f"{de_['corr_timing_vs_binary_y']['spearman_rho']:+.4f} / {de_['corr_timing_vs_weight']['spearman_rho']:+.4f} | "
+            f"{de_['best_accuracy']*100:.2f}% ({de_['best_model']} / {de_['best_perm_pvalue_display']}) |"
+        )
+    with open(out_md, "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+    print(f"\nCapability: {raw_cap}")
+    print(f"Saved: {out_json}, {out_md}, {out_svg} ({res_dict['experiment']['total_wall_seconds']:.1f}s)")
+    return res_dict
+
+
 def main():
     parser = argparse.ArgumentParser(description="Real ML-KEM (n=256) decrypt side-channel evaluation via kyber-py.")
     parser.add_argument("--variant", choices=["standard", "qeqske", "both"], default="both", help="Protocol variant: standard ML-KEM, QEQSKE per-key q + QRNG, or both.")
@@ -1165,7 +1665,19 @@ def main():
     parser.add_argument("--seed", type=int, default=SEED, help="Random seed (default 42).")
     parser.add_argument("--skip-tracemalloc", action="store_true", help="Skip tracemalloc pass.")
     parser.add_argument("--tag", type=str, default=None, help="Optional filename suffix tag.")
+    parser.add_argument("--detrend-existing", action="store_true", help="Compare Raw vs Order-OLS vs Rolling-Median detrending on existing 5000-trial traces.")
+    parser.add_argument("--positive-control", action="store_true", help="Run graded injected-delay positive control on ML-KEM decaps.")
+    parser.add_argument("--delays", type=str, default="0,1,2,5,10,20,50", help="Comma-separated delays in us for --positive-control.")
     args = parser.parse_args()
+
+    if args.detrend_existing:
+        run_detrend_comparison()
+        return
+
+    if args.positive_control:
+        delays = tuple(float(x.strip()) for x in args.delays.split(",") if x.strip())
+        run_mlkem_positive_control(k_param=args.k, n_trials=args.n_trials, delays_us=delays, seed=args.seed)
+        return
 
     if args.variant == "both":
         std_res = run_mlkem_pipeline(

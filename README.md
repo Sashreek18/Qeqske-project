@@ -279,6 +279,31 @@ To test whether the toy `decrypt_it` weight leak survives at real post-quantum p
 **Does the leak survive at `n=256`? No — it disappears completely:**
 1. **Why NTT extinguishes the CPython `*0` weight leak:** In toy QEQSKE, `decrypt_it` multiplied directly against raw centered secret entries `s ∈ {-1, 0, 1}` (~33% zeros), exposing CPython's `x * 0` fast-path. In real ML-KEM (`kyber-py`), decapsulation multiplies in the **NTT domain** (`s_hat.dot(u_hat)`). Although centered `s` averages `160.04` zeros (`standard`) and `159.88` zeros (`qeqske`) out of `512` coefficients (`secret_weight` `351.96 ± 10.45` and `352.12 ± 10.67`), the NTT representation `s_hat` is pseudo-uniform over `Z_q` with only **`0.15 / 512` zeros** (`standard`) and **`0.04 / 512` zeros** (`qeqske`) — practically zero. Consequently, neither clean `decaps`, isolated `_k_pke_decrypt` (`585.7 µs` / `563.8 µs`), nor `tracemalloc`-wrapped `decaps` (`21.5 ms` / `22.3 ms`) leaks `secret_weight` or `s[0][0]` sign.
 2. **Per-key `q` timing confound vs. zero secret leakage in QEQSKE-Variant ML-KEM:** In `mlkem512_qeqske`, variable prime `q` correlates with clean execution timing (`q` vs `dec_timing_us` `r = +0.1493`, `dec_cpu_user_us` `r = +0.3129`, `pke_dec_timing_us` `r = +0.1578`) and induces a spurious correlation with `dk_bit_hw` (`ρ = +0.3082, p = 1.90e-110`) because larger `q` widens public/encoded integer bit lengths. Crucially, `q` is uncorrelated with `secret_weight` (`r = +0.0161, p = 0.2557`) and `s00_positive` (`r = +0.0129, p = 0.3604`), and `q`-residualized ML remains strictly at baseline (`51.12%` vs. `51.14%`), confirming zero secret-key leakage. *(Caveat: `kyber-py` is a pure-Python educational reference implementation; absence of a secret-weight timing leak in `kyber-py` under software tracing does not replace masked hardware power/EM side-channel evaluations.)*
+3. **ML-KEM-512 Detrending & Calibrated `n=256` Detection Threshold:**
+   - **Detrending non-linear execution drift (`attack_c_mlkem_decrypt_5000.py --detrend-existing`, `results/mlkem512_detrend_comparison_summary.md`):** On Linux `i9-12900K`, raw `kyber-py` `decaps` timing exhibited non-linear thermal/warm-up drift (`exec_order_pos` vs. timing Spearman `ρ = -0.4668`). Leave-one-out centered **rolling-median detrending (`W=51`)** cuts Standard ML-KEM-512 timing SD nearly in half (`295.0 → 155.9 µs`, `IQR 55.0 → 30.4 µs`) and removes the order drift (`ρ = -0.0108`), yet both `Standard` (`52.01%` vs. `52.02%`, `p = 0.3284`) and `QEQSKE-Variant` (`51.03%` vs. `51.14%`, `p = 0.3731`, **`wraps = 0` QRNG reuse**) remain strictly at baseline:
+
+| ML-KEM-512 Variant & Mode (5,000 Linux Trials) | Timing SD / IQR (µs) | Order Drift `r` (`ρ`) | `ρ_weight` [95% CI] | Best 5×10 Clf (Acc / Base / `q`-Res) | Perm `p` |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Standard** — Raw | 295.0 / 55.0 | -0.1523 (-0.4668) | +0.0147 [-0.0134, +0.0424] | 52.11% `SVM` / 52.02% / 52.11% | 0.1592 |
+| **Standard** — Order-OLS Residuals | 291.6 / 53.8 | +0.0000 (+0.4998) | +0.0127 [-0.0148, +0.0422] | 52.04% `SVM` / 52.02% / 52.04% | 0.0846 |
+| **Standard** — Rolling Median (`W=51`) | **155.9 / 30.4** | -0.1023 (**-0.0108**) | +0.0335 [+0.0055, +0.0622] | **52.01%** `SVM` / 52.02% / 52.01% | **0.3284** |
+| **QEQSKE-Variant** — Raw | 97.5 / 58.1 | +0.0776 (+0.0652) | +0.0120 [-0.0152, +0.0408] | 51.09% `LR` / 51.14% / 51.12% | 0.2438 |
+| **QEQSKE-Variant** — Order-OLS Residuals | 97.2 / 58.3 | +0.0000 (-0.1104) | +0.0097 [-0.0173, +0.0392] | 51.09% `LR` / 51.14% / 51.13% | 0.2637 |
+| **QEQSKE-Variant** — Rolling Median (`W=51`) | **95.5 / 53.2** | +0.0542 (**+0.0114**) | +0.0220 [-0.0052, +0.0499] | **51.03%** `LR` / 51.14% / 50.52% | **0.3731** |
+
+   - **Graded Positive Control at `n=256` (`attack_c_mlkem_decrypt_5000.py --positive-control`, `results/mlkem512_positive_control_5000_summary.md`, Apple M2):** Injecting `0, 1, 2, 5, 10, 20, 50 µs` into `ML-KEM-512` `decaps` (`2382.3 µs` median, `IQR 16.3 µs`, `5000/5000` correctness across all levels) proves the pipeline reliably detects leaks down to **`2.0 µs`** (**`< 0.1%` of runtime**, Spearman `ρ_binary >= +0.1022` Raw / `+0.1069` Detrended, `p < 1/201 (0.0050)`), bounding any hypothetical undetected `kyber-py` secret-dependent timing difference strictly below `< 2 µs`:
+
+| Injected Delay | Raw Δt | Raw `ρ_bin` | Raw Best Acc (Model / Perm `p`) | Detrended IQR (µs) | Detrended `ρ_bin` | Detrended Best Acc (Model / Perm `p`) |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **0 µs** | -0.12 µs | -0.0100 | 51.98% (`LR` / 0.9204) | 15.6 | -0.0094 | 51.99% (`LR` / 0.8856) |
+| **1 µs** | +1.17 µs | +0.0419 | 52.51% (`MLP` / 0.0348) | 15.9 | +0.0396 | 52.39% (`MLP` / 0.0249) |
+| **2 µs** *(Floor)* | **+2.50 µs** | **+0.1022** | **54.10%** (`MLP` / **< 1/201 (0.0050)**) | **14.8** | **+0.1069** | **55.40%** (`SVM` / **< 1/201 (0.0050)**) |
+| **5 µs** | +5.25 µs | +0.2226 | **61.04%** (`MLP` / `< 1/201 (0.0050)`) | 15.5 | +0.2242 | **60.96%** (`MLP` / `< 1/201 (0.0050)`) |
+| **10 µs** | +10.08 µs | +0.4136 | **71.87%** (`MLP` / `< 1/201 (0.0050)`) | 16.8 | +0.4056 | **70.98%** (`MLP` / `< 1/201 (0.0050)`) |
+| **20 µs** | +19.58 µs | +0.6445 | **86.16%** (`MLP` / `< 1/201 (0.0050)`) | 22.5 | +0.6297 | **84.57%** (`MLP` / `< 1/201 (0.0050)`) |
+| **50 µs** | +49.54 µs | +0.8352 | **98.65%** (`MLP` / `< 1/201 (0.0050)`) | 49.7 | +0.8117 | **94.53%** (`MLP` / `< 1/201 (0.0050)`) |
+
+![ML-KEM-512 Graded Leak Threshold](results/mlkem512_leak_threshold.svg)
 
 ---
 
@@ -300,6 +325,8 @@ To test whether the toy `decrypt_it` weight leak survives at real post-quantum p
 | `collect_reproducibility_info.py` | Captures software versions, hardware specs, CPU model, seeds, and hyperparameters to `results/reproducibility.json`. |
 | `run_full_suite.py` | Earlier 5-step runner covering correctness, NIST tests, Attack A, Attack B, and Attack C timing groundwork. |
 | `Large_Scale_Run_Script.py` | Extended 12-step runner across full QRNG dataset, Attack A/B/C pipelines, system comparison, and metadata collection. |
+| `reproduce_all.py` | One-command reproduction runner (`--mode fast` for checks/comparisons/detrending + JSON audit; `--mode full` for full end-to-end re-execution). |
+| `PAPER_OUTLINE.md` | Paper-ready structured manuscript outline covering threat model, related work, methodology, all verified results, and explicit limitations. |
 
 ### Self-Audit, Attack Suites & Side-Channel Pipelines
 | Script | Purpose |
@@ -366,9 +393,17 @@ python3 attack_c_leaky_vs_clean.py
 # Real ML-KEM (n=256, k=2 or 3) standard vs. QEQSKE-variant 5,000-trial evaluation
 python3 attack_c_mlkem_decrypt_5000.py --variant both --k 2 --n-trials 5000
 
+# One-command reproduction (fast verification vs. full suite)
+python3 reproduce_all.py --mode fast
+python3 reproduce_all.py --mode full
+
 # Clean 5,000-trial Sender <-> Receiver + Localhost TCP RTT trace collection & stress test
 python3 attack_sc_sender_receiver_traces.py
 python3 stress_test_traces.py
+
+# ML-KEM-512 detrending & n=256 positive control sensitivity sweep
+python3 attack_c_mlkem_decrypt_5000.py --detrend-existing
+python3 attack_c_mlkem_decrypt_5000.py --positive-control --n-trials 5000
 ```
 
 ---
@@ -391,4 +426,4 @@ python3 stress_test_traces.py
 | **Cross-Machine 5,000-Trial Replication (`attack_c_decrypt_5000.py`)** | **Complete** | **Machine 1 (Linux x86_64 Intel i9-12900K `65.25%`, `R² +0.2260`) replicated on Machine 2 (macOS arm64 Apple M2 `63.65%`, `R² +0.1768`, `p < 1/201`) (`results/decrypt_leak_5000_mac_arm64_summary.md`)** |
 | Attack C Real Hardware Power/Cache Traces | Pending HCL Access | Requires physical oscilloscope / hardware PMU counters |
 | Attack D (Fault Injection) | Out of Scope (Ignored) | Excluded per project scope; `attack_d_cca_mismatch.py` retained as appendix CCA note |
-| **Scale to `n=256` (Real ML-KEM vs. QEQSKE Variant)** | **Complete** | **5,000 trials (`k=2`, `kyber-py` + QRNG per-key NTT `q`): leak vanishes (`52.12%` / `51.09%` weight, `65.62%` / `64.28%` `s[0][0]>0`, all `R² < 0`; `results/mlkem512_comparison_summary.md`)** |
+| **Scale to `n=256` (Real ML-KEM vs. QEQSKE Variant, Detrending & Positive Control)** | **Complete** | **5,000 trials (`k=2`, `kyber-py` + QRNG `wraps=0`): leak vanishes (`52.12%` / `51.09%`, `p >= 0.1592`, unchanged under `W=51` detrending `52.01%` / `51.03%`); `n=256` positive control detects `>= 2 µs` (`ρ_bin >= +0.1022`, `p < 1/201`) (`results/mlkem512_comparison_summary.md`, `results/mlkem512_detrend_comparison_summary.md`, `results/mlkem512_positive_control_5000_summary.md`)** |
