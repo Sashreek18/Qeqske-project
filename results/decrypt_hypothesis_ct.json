@@ -1,0 +1,1013 @@
+{
+  "part_a_microbenchmark": {
+    "cpu_pinned": true,
+    "cpu_pin_note": "Pinned to CPU core 0 via os.sched_setaffinity(0, {0}).",
+    "batch_calls": 40,
+    "reps_per_weight": 300,
+    "q": 32771,
+    "mat_mult_mod_by_weight": {
+      "0": {
+        "count": 300,
+        "median_us": 33.86,
+        "iqr_us": 1.5672500000000014,
+        "p25_us": 33.38575,
+        "p75_us": 34.953,
+        "mean_us": 34.84793333333333,
+        "std_us": 3.4326474979291164,
+        "median_per_call_us": 0.8465,
+        "iqr_per_call_us": 0.039181250000000035
+      },
+      "1": {
+        "count": 300,
+        "median_us": 36.472,
+        "iqr_us": 1.8094999999999999,
+        "p25_us": 35.7245,
+        "p75_us": 37.534,
+        "mean_us": 37.75339666666667,
+        "std_us": 4.586253345067121,
+        "median_per_call_us": 0.9118,
+        "iqr_per_call_us": 0.0452375
+      },
+      "2": {
+        "count": 300,
+        "median_us": 38.066,
+        "iqr_us": 2.0360000000000085,
+        "p25_us": 37.29474999999999,
+        "p75_us": 39.33075,
+        "mean_us": 39.17596666666667,
+        "std_us": 4.242899421846092,
+        "median_per_call_us": 0.9516500000000001,
+        "iqr_per_call_us": 0.05090000000000021
+      },
+      "3": {
+        "count": 300,
+        "median_us": 39.5655,
+        "iqr_us": 1.945999999999998,
+        "p25_us": 38.77525,
+        "p75_us": 40.72125,
+        "mean_us": 42.13821,
+        "std_us": 23.824412713356743,
+        "median_per_call_us": 0.9891375,
+        "iqr_per_call_us": 0.04864999999999995
+      },
+      "4": {
+        "count": 300,
+        "median_us": 40.5255,
+        "iqr_us": 1.8847499999999968,
+        "p25_us": 39.700500000000005,
+        "p75_us": 41.58525,
+        "mean_us": 42.18394,
+        "std_us": 6.350027748318484,
+        "median_per_call_us": 1.0131375,
+        "iqr_per_call_us": 0.04711874999999992
+      },
+      "5": {
+        "count": 300,
+        "median_us": 41.166,
+        "iqr_us": 1.9705000000000013,
+        "p25_us": 40.369749999999996,
+        "p75_us": 42.34025,
+        "mean_us": 42.20993333333333,
+        "std_us": 3.5781870050393296,
+        "median_per_call_us": 1.02915,
+        "iqr_per_call_us": 0.04926250000000003
+      },
+      "6": {
+        "count": 300,
+        "median_us": 41.883,
+        "iqr_us": 2.206249999999997,
+        "p25_us": 41.081,
+        "p75_us": 43.28725,
+        "mean_us": 43.33240000000001,
+        "std_us": 5.298029210790994,
+        "median_per_call_us": 1.047075,
+        "iqr_per_call_us": 0.05515624999999993
+      },
+      "7": {
+        "count": 300,
+        "median_us": 42.7285,
+        "iqr_us": 2.09825,
+        "p25_us": 41.70925,
+        "p75_us": 43.8075,
+        "mean_us": 45.08226666666667,
+        "std_us": 23.517233893940343,
+        "median_per_call_us": 1.0682125,
+        "iqr_per_call_us": 0.05245625
+      },
+      "8": {
+        "count": 300,
+        "median_us": 43.3495,
+        "iqr_us": 2.791000000000004,
+        "p25_us": 42.38525,
+        "p75_us": 45.17625,
+        "mean_us": 45.29549666666667,
+        "std_us": 13.648407273880027,
+        "median_per_call_us": 1.0837375,
+        "iqr_per_call_us": 0.0697750000000001
+      }
+    },
+    "mat_mult_mod_weight_correlation": {
+      "pearson_r": 0.23820100991100876,
+      "pearson_p": 3.843769734324598e-36,
+      "pearson_boot_ci95": [
+        0.16398783938461886,
+        0.5119705442334598
+      ],
+      "pearson_boot_se": 0.08479735960232704,
+      "spearman_rho": 0.7668354950025886,
+      "spearman_p": 0.0,
+      "spearman_boot_ci95": [
+        0.7412388658786959,
+        0.7914054126392909
+      ],
+      "spearman_boot_se": 0.012532869010838327,
+      "n_bootstrap": 2000
+    },
+    "numpy_matmul_by_weight": {
+      "0": {
+        "count": 300,
+        "median_us": 2.7835,
+        "iqr_us": 0.08625000000000016,
+        "p25_us": 2.75575,
+        "p75_us": 2.842,
+        "mean_us": 2.9707900000000005,
+        "std_us": 0.5833007100066948
+      },
+      "1": {
+        "count": 300,
+        "median_us": 2.8525,
+        "iqr_us": 0.22699999999999987,
+        "p25_us": 2.783,
+        "p75_us": 3.01,
+        "mean_us": 3.08327,
+        "std_us": 1.8153728337502453
+      },
+      "2": {
+        "count": 300,
+        "median_us": 2.9885,
+        "iqr_us": 0.2679999999999998,
+        "p25_us": 2.89475,
+        "p75_us": 3.16275,
+        "mean_us": 3.3287166666666668,
+        "std_us": 2.20661648929418
+      },
+      "3": {
+        "count": 300,
+        "median_us": 3.0225,
+        "iqr_us": 0.26925,
+        "p25_us": 2.914,
+        "p75_us": 3.18325,
+        "mean_us": 3.1342566666666665,
+        "std_us": 0.4355841241592959
+      },
+      "4": {
+        "count": 300,
+        "median_us": 3.024,
+        "iqr_us": 0.2502500000000003,
+        "p25_us": 2.8922499999999998,
+        "p75_us": 3.1425,
+        "mean_us": 3.2317133333333334,
+        "std_us": 1.6833919029204945
+      },
+      "5": {
+        "count": 300,
+        "median_us": 3.042,
+        "iqr_us": 0.26049999999999995,
+        "p25_us": 2.93975,
+        "p75_us": 3.20025,
+        "mean_us": 3.2925099999999996,
+        "std_us": 1.8764442865256572
+      },
+      "6": {
+        "count": 300,
+        "median_us": 3.092,
+        "iqr_us": 0.27,
+        "p25_us": 2.97275,
+        "p75_us": 3.24275,
+        "mean_us": 3.363286666666667,
+        "std_us": 1.9298937234387068
+      },
+      "7": {
+        "count": 300,
+        "median_us": 3.0795,
+        "iqr_us": 0.30374999999999996,
+        "p25_us": 2.954,
+        "p75_us": 3.25775,
+        "mean_us": 3.5169333333333332,
+        "std_us": 3.1333492763891457
+      },
+      "8": {
+        "count": 300,
+        "median_us": 3.12,
+        "iqr_us": 0.26575000000000015,
+        "p25_us": 3.0012499999999998,
+        "p75_us": 3.267,
+        "mean_us": 3.40086,
+        "std_us": 2.0156132473624853
+      }
+    },
+    "numpy_matmul_weight_correlation": {
+      "pearson_r": 0.0732533875259979,
+      "pearson_p": 0.0001391276044791918,
+      "pearson_boot_ci95": [
+        0.0383666962239901,
+        0.10716007886603753
+      ],
+      "pearson_boot_se": 0.017554579610302684,
+      "spearman_rho": 0.4307295307239752,
+      "spearman_p": 2.1060093899960234e-122,
+      "spearman_boot_ci95": [
+        0.3955716474018622,
+        0.46659821075785535
+      ],
+      "spearman_boot_se": 0.017714933219232357,
+      "n_bootstrap": 2000
+    },
+    "operand_isolation_40calls": {
+      "all_0": {
+        "count": 500,
+        "median_us": 33.0445,
+        "iqr_us": 1.599499999999999,
+        "p25_us": 32.53725,
+        "p75_us": 34.13675,
+        "mean_us": 34.01077,
+        "std_us": 4.002985982319861,
+        "median_per_call_us": 0.8261125,
+        "iqr_per_call_us": 0.039987499999999974
+      },
+      "all_pos1": {
+        "count": 500,
+        "median_us": 40.9845,
+        "iqr_us": 1.9840000000000018,
+        "p25_us": 40.14875,
+        "p75_us": 42.13275,
+        "mean_us": 42.254732000000004,
+        "std_us": 4.49768683501951,
+        "median_per_call_us": 1.0246125,
+        "iqr_per_call_us": 0.04960000000000005
+      },
+      "all_neg1": {
+        "count": 500,
+        "median_us": 41.1305,
+        "iqr_us": 1.6312500000000014,
+        "p25_us": 40.701,
+        "p75_us": 42.33225,
+        "mean_us": 42.547154,
+        "std_us": 4.478685786145982,
+        "median_per_call_us": 1.0282624999999999,
+        "iqr_per_call_us": 0.04078125000000003
+      }
+    },
+    "operand_isolation_tests": {
+      "all_pos1_vs_all_0_delta_median_us": 7.939999999999998,
+      "all_neg1_vs_all_0_delta_median_us": 8.085999999999999,
+      "all_pos1_vs_all_neg1_delta_median_us": -0.1460000000000008,
+      "all_pos1_vs_all_0_mannwhitney_p": 3.7532099495166995e-143,
+      "all_neg1_vs_all_0_mannwhitney_p": 2.057929264779058e-143,
+      "all_pos1_vs_all_neg1_mannwhitney_p": 2.996567702280121e-06
+    },
+    "cpython_micro_ops": {
+      "iters_per_rep": 2000,
+      "reps_per_op": 500,
+      "stats": {
+        "mul_zero": {
+          "count": 500,
+          "median_us": 22.737,
+          "iqr_us": 0.5022499999999965,
+          "p25_us": 22.393,
+          "p75_us": 22.895249999999997,
+          "mean_us": 23.228778,
+          "std_us": 2.8192373435229303,
+          "median_ns_per_op": 11.3685,
+          "iqr_ns_per_op": 0.25112499999999827
+        },
+        "mul_pos1": {
+          "count": 500,
+          "median_us": 33.058499999999995,
+          "iqr_us": 0.7407500000000056,
+          "p25_us": 32.9905,
+          "p75_us": 33.73125,
+          "mean_us": 34.247778000000004,
+          "std_us": 4.56910088513189,
+          "median_ns_per_op": 16.529249999999998,
+          "iqr_ns_per_op": 0.3703750000000028
+        },
+        "mul_neg1": {
+          "count": 500,
+          "median_us": 34.1785,
+          "iqr_us": 0.8755000000000024,
+          "p25_us": 33.81675,
+          "p75_us": 34.69225,
+          "mean_us": 34.930214,
+          "std_us": 2.659154476382018,
+          "median_ns_per_op": 17.08925,
+          "iqr_ns_per_op": 0.4377500000000012
+        },
+        "add_zero": {
+          "count": 500,
+          "median_us": 32.716,
+          "iqr_us": 0.9907500000000056,
+          "p25_us": 32.338499999999996,
+          "p75_us": 33.32925,
+          "mean_us": 33.47613799999999,
+          "std_us": 3.109866239408059,
+          "median_ns_per_op": 16.358,
+          "iqr_ns_per_op": 0.4953750000000028
+        },
+        "add_nonzero": {
+          "count": 500,
+          "median_us": 33.082,
+          "iqr_us": 1.049750000000003,
+          "p25_us": 32.69175,
+          "p75_us": 33.7415,
+          "mean_us": 33.778237999999995,
+          "std_us": 2.756930370446628,
+          "median_ns_per_op": 16.541,
+          "iqr_ns_per_op": 0.5248750000000016
+        }
+      }
+    }
+  },
+  "part_b_profile_dis": {
+    "n_profile_calls": 2000,
+    "realistic_qrng": {
+      "total_tottime_s": 0.30898385700000003,
+      "top_functions": [
+        {
+          "func": "qeqske_core.py:137(mat_mult_mod)",
+          "ncalls": 80000,
+          "tottime_s": 0.129782017,
+          "cumtime_s": 0.141359603,
+          "pct_tottime": 42.00284709372373
+        },
+        {
+          "func": "qeqske_core.py:273(decrypt_it)",
+          "ncalls": 2000,
+          "tottime_s": 0.060460763,
+          "cumtime_s": 0.30896687100000003,
+          "pct_tottime": 19.567612232894092
+        },
+        {
+          "func": "qeqske_core.py:157(mat_sub_mod)",
+          "ncalls": 80000,
+          "tottime_s": 0.04813821,
+          "cumtime_s": 0.056979909,
+          "pct_tottime": 15.579522654479646
+        },
+        {
+          "func": "~:0(<built-in method builtins.len>)",
+          "ncalls": 576000,
+          "tottime_s": 0.021194171,
+          "cumtime_s": 0.021194171,
+          "pct_tottime": 6.859313365358114
+        },
+        {
+          "func": "~:0(<built-in method builtins.min>)",
+          "ncalls": 80000,
+          "tottime_s": 0.010285144000000001,
+          "cumtime_s": 0.010285144000000001,
+          "pct_tottime": 3.328699466652072
+        },
+        {
+          "func": "qeqske_core.py:221(<genexpr>)",
+          "ncalls": 90000,
+          "tottime_s": 0.009837407000000001,
+          "cumtime_s": 0.009837407000000001,
+          "pct_tottime": 3.1837931908526858
+        },
+        {
+          "func": "qeqske_core.py:215(bits_to_string)",
+          "ncalls": 2000,
+          "tottime_s": 0.007756961000000001,
+          "cumtime_s": 0.027132301,
+          "pct_tottime": 2.5104745197092933
+        },
+        {
+          "func": "~:0(<method 'append' of 'list' objects>)",
+          "ncalls": 90000,
+          "tottime_s": 0.007544739000000001,
+          "cumtime_s": 0.007544739000000001,
+          "pct_tottime": 2.4417906725787293
+        },
+        {
+          "func": "~:0(<method 'join' of 'str' objects>)",
+          "ncalls": 12000,
+          "tottime_s": 0.007343627,
+          "cumtime_s": 0.017181034,
+          "pct_tottime": 2.376702482550731
+        },
+        {
+          "func": "~:0(<built-in method builtins.abs>)",
+          "ncalls": 80000,
+          "tottime_s": 0.005496097,
+          "cumtime_s": 0.005496097,
+          "pct_tottime": 1.7787650958088725
+        },
+        {
+          "func": "~:0(<built-in method builtins.chr>)",
+          "ncalls": 10000,
+          "tottime_s": 0.000744128,
+          "cumtime_s": 0.000744128,
+          "pct_tottime": 0.24083070462804146
+        },
+        {
+          "func": "~:0(<built-in method builtins.isinstance>)",
+          "ncalls": 6000,
+          "tottime_s": 0.000383607,
+          "cumtime_s": 0.000383607,
+          "pct_tottime": 0.12415114618754984
+        }
+      ]
+    },
+    "paired_w0_vs_w8": {
+      "w0_total_tottime_s": 0.289694966,
+      "w8_total_tottime_s": 0.31194746100000004,
+      "delta_w8_minus_w0_s": 0.02225249500000004,
+      "w0_top_functions": [
+        {
+          "func": "qeqske_core.py:137(mat_mult_mod)",
+          "ncalls": 80000,
+          "tottime_s": 0.114061463,
+          "cumtime_s": 0.12550845700000002,
+          "pct_tottime": 39.37295306677853
+        },
+        {
+          "func": "qeqske_core.py:273(decrypt_it)",
+          "ncalls": 2000,
+          "tottime_s": 0.05806866200000001,
+          "cumtime_s": 0.289680366,
+          "pct_tottime": 20.044760460214558
+        },
+        {
+          "func": "qeqske_core.py:157(mat_sub_mod)",
+          "ncalls": 80000,
+          "tottime_s": 0.047713734,
+          "cumtime_s": 0.056451470000000004,
+          "pct_tottime": 16.470335904973922
+        },
+        {
+          "func": "~:0(<built-in method builtins.len>)",
+          "ncalls": 576000,
+          "tottime_s": 0.020941432000000003,
+          "cumtime_s": 0.020941432000000003,
+          "pct_tottime": 7.228786985549485
+        },
+        {
+          "func": "~:0(<built-in method builtins.min>)",
+          "ncalls": 80000,
+          "tottime_s": 0.010036903,
+          "cumtime_s": 0.010036903,
+          "pct_tottime": 3.4646452917652697
+        },
+        {
+          "func": "qeqske_core.py:221(<genexpr>)",
+          "ncalls": 90000,
+          "tottime_s": 0.009851663,
+          "cumtime_s": 0.009851663,
+          "pct_tottime": 3.4007021716766737
+        },
+        {
+          "func": "qeqske_core.py:215(bits_to_string)",
+          "ncalls": 2000,
+          "tottime_s": 0.007647428,
+          "cumtime_s": 0.027093724000000003,
+          "pct_tottime": 2.6398208106936867
+        },
+        {
+          "func": "~:0(<method 'append' of 'list' objects>)",
+          "ncalls": 90000,
+          "tottime_s": 0.007433727,
+          "cumtime_s": 0.007433727,
+          "pct_tottime": 2.5660532188881735
+        },
+        {
+          "func": "~:0(<method 'join' of 'str' objects>)",
+          "ncalls": 12000,
+          "tottime_s": 0.007380167000000001,
+          "cumtime_s": 0.01723183,
+          "pct_tottime": 2.5475648064937384
+        },
+        {
+          "func": "~:0(<built-in method builtins.abs>)",
+          "ncalls": 80000,
+          "tottime_s": 0.005378446,
+          "cumtime_s": 0.005378446,
+          "pct_tottime": 1.8565893892681589
+        },
+        {
+          "func": "~:0(<built-in method builtins.chr>)",
+          "ncalls": 10000,
+          "tottime_s": 0.0007867250000000001,
+          "cumtime_s": 0.0007867250000000001,
+          "pct_tottime": 0.27157013146027537
+        },
+        {
+          "func": "~:0(<built-in method builtins.isinstance>)",
+          "ncalls": 6000,
+          "tottime_s": 0.000380016,
+          "cumtime_s": 0.000380016,
+          "pct_tottime": 0.13117797842576248
+        }
+      ],
+      "w8_top_functions": [
+        {
+          "func": "qeqske_core.py:137(mat_mult_mod)",
+          "ncalls": 80000,
+          "tottime_s": 0.13236082300000002,
+          "cumtime_s": 0.143824208,
+          "pct_tottime": 42.43048575413793
+        },
+        {
+          "func": "qeqske_core.py:273(decrypt_it)",
+          "ncalls": 2000,
+          "tottime_s": 0.059370958,
+          "cumtime_s": 0.31193084000000004,
+          "pct_tottime": 19.032358144437662
+        },
+        {
+          "func": "qeqske_core.py:157(mat_sub_mod)",
+          "ncalls": 80000,
+          "tottime_s": 0.049860595,
+          "cumtime_s": 0.058680005,
+          "pct_tottime": 15.983651490595078
+        },
+        {
+          "func": "~:0(<built-in method builtins.len>)",
+          "ncalls": 576000,
+          "tottime_s": 0.021032806,
+          "cumtime_s": 0.021032806,
+          "pct_tottime": 6.742419358880436
+        },
+        {
+          "func": "~:0(<built-in method builtins.min>)",
+          "ncalls": 80000,
+          "tottime_s": 0.01024245,
+          "cumtime_s": 0.01024245,
+          "pct_tottime": 3.28338944230099
+        },
+        {
+          "func": "qeqske_core.py:221(<genexpr>)",
+          "ncalls": 90000,
+          "tottime_s": 0.009937704,
+          "cumtime_s": 0.009937704,
+          "pct_tottime": 3.1856979916243007
+        },
+        {
+          "func": "qeqske_core.py:215(bits_to_string)",
+          "ncalls": 2000,
+          "tottime_s": 0.0077662830000000006,
+          "cumtime_s": 0.027304515,
+          "pct_tottime": 2.4896125056135654
+        },
+        {
+          "func": "~:0(<method 'join' of 'str' objects>)",
+          "ncalls": 12000,
+          "tottime_s": 0.007414032,
+          "cumtime_s": 0.017351736,
+          "pct_tottime": 2.376692529002504
+        },
+        {
+          "func": "~:0(<method 'append' of 'list' objects>)",
+          "ncalls": 90000,
+          "tottime_s": 0.0074128150000000005,
+          "cumtime_s": 0.0074128150000000005,
+          "pct_tottime": 2.3763023992043326
+        },
+        {
+          "func": "~:0(<built-in method builtins.abs>)",
+          "ncalls": 80000,
+          "tottime_s": 0.005373478,
+          "cumtime_s": 0.005373478,
+          "pct_tottime": 1.7225586586838735
+        },
+        {
+          "func": "~:0(<built-in method builtins.chr>)",
+          "ncalls": 10000,
+          "tottime_s": 0.00077145,
+          "cumtime_s": 0.00077145,
+          "pct_tottime": 0.24730125948997544
+        },
+        {
+          "func": "~:0(<built-in method builtins.isinstance>)",
+          "ncalls": 6000,
+          "tottime_s": 0.000387446,
+          "cumtime_s": 0.000387446,
+          "pct_tottime": 0.12420232521142398
+        }
+      ],
+      "per_function_delta": [
+        {
+          "func": "qeqske_core.py:137(mat_mult_mod)",
+          "w0_tottime_s": 0.114061463,
+          "w8_tottime_s": 0.13236082300000002,
+          "delta_w8_minus_w0_s": 0.018299360000000015
+        },
+        {
+          "func": "qeqske_core.py:273(decrypt_it)",
+          "w0_tottime_s": 0.05806866200000001,
+          "w8_tottime_s": 0.059370958,
+          "delta_w8_minus_w0_s": 0.0013022959999999945
+        },
+        {
+          "func": "qeqske_core.py:157(mat_sub_mod)",
+          "w0_tottime_s": 0.047713734,
+          "w8_tottime_s": 0.049860595,
+          "delta_w8_minus_w0_s": 0.002146861
+        },
+        {
+          "func": "~:0(<built-in method builtins.len>)",
+          "w0_tottime_s": 0.020941432000000003,
+          "w8_tottime_s": 0.021032806,
+          "delta_w8_minus_w0_s": 9.137399999999823e-05
+        },
+        {
+          "func": "~:0(<built-in method builtins.min>)",
+          "w0_tottime_s": 0.010036903,
+          "w8_tottime_s": 0.01024245,
+          "delta_w8_minus_w0_s": 0.00020554700000000037
+        },
+        {
+          "func": "qeqske_core.py:221(<genexpr>)",
+          "w0_tottime_s": 0.009851663,
+          "w8_tottime_s": 0.009937704,
+          "delta_w8_minus_w0_s": 8.604100000000024e-05
+        },
+        {
+          "func": "qeqske_core.py:215(bits_to_string)",
+          "w0_tottime_s": 0.007647428,
+          "w8_tottime_s": 0.0077662830000000006,
+          "delta_w8_minus_w0_s": 0.00011885500000000018
+        },
+        {
+          "func": "~:0(<method 'append' of 'list' objects>)",
+          "w0_tottime_s": 0.007433727,
+          "w8_tottime_s": 0.0074128150000000005,
+          "delta_w8_minus_w0_s": -2.0911999999999667e-05
+        },
+        {
+          "func": "~:0(<method 'join' of 'str' objects>)",
+          "w0_tottime_s": 0.007380167000000001,
+          "w8_tottime_s": 0.007414032,
+          "delta_w8_minus_w0_s": 3.386499999999924e-05
+        },
+        {
+          "func": "~:0(<built-in method builtins.abs>)",
+          "w0_tottime_s": 0.005378446,
+          "w8_tottime_s": 0.005373478,
+          "delta_w8_minus_w0_s": -4.96800000000016e-06
+        }
+      ]
+    },
+    "disassembly": {
+      "mat_mult_mod_standard": "137           0 RESUME                   0\n\n138           2 LOAD_GLOBAL              1 (NULL + len)\n             12 LOAD_FAST                0 (A)\n             14 CALL                     1\n             22 LOAD_GLOBAL              1 (NULL + len)\n             32 LOAD_FAST                0 (A)\n             34 LOAD_CONST               1 (0)\n             36 BINARY_SUBSCR\n             40 CALL                     1\n             48 STORE_FAST               4 (cols_a)\n             50 STORE_FAST               3 (rows_a)\n\n139          52 LOAD_GLOBAL              1 (NULL + len)\n             62 LOAD_FAST                1 (B)\n             64 CALL                     1\n             72 LOAD_GLOBAL              1 (NULL + len)\n             82 LOAD_FAST                1 (B)\n             84 LOAD_CONST               1 (0)\n             86 BINARY_SUBSCR\n             90 CALL                     1\n             98 STORE_FAST               6 (cols_b)\n            100 STORE_FAST               5 (rows_b)\n\n140         102 LOAD_FAST                4 (cols_a)\n            104 LOAD_FAST                5 (rows_b)\n            106 COMPARE_OP              40 (==)\n            110 POP_JUMP_IF_TRUE        13 (to 138)\n            112 LOAD_ASSERTION_ERROR\n            114 LOAD_CONST               2 ('Shape mismatch: ')\n            116 LOAD_FAST                4 (cols_a)\n            118 FORMAT_VALUE             0\n            120 LOAD_CONST               3 (' != ')\n            122 LOAD_FAST                5 (rows_b)\n            124 FORMAT_VALUE             0\n            126 BUILD_STRING             4\n            128 CALL                     0\n            136 RAISE_VARARGS            1\n\n141     >>  138 LOAD_GLOBAL              3 (NULL + range)\n            148 LOAD_FAST                3 (rows_a)\n            150 CALL                     1\n            158 GET_ITER\n            160 LOAD_FAST_AND_CLEAR      7 (_)\n            162 SWAP                     2\n            164 BUILD_LIST               0\n            166 SWAP                     2\n        >>  168 FOR_ITER                 8 (to 188)\n            172 STORE_FAST               7 (_)\n            174 LOAD_CONST               1 (0)\n            176 BUILD_LIST               1\n            178 LOAD_FAST                6 (cols_b)\n            180 BINARY_OP                5 (*)\n            184 LIST_APPEND              2\n            186 JUMP_BACKWARD           10 (to 168)\n        >>  188 END_FOR\n            190 STORE_FAST               8 (result)\n            192 STORE_FAST               7 (_)\n\n142         194 LOAD_GLOBAL              3 (NULL + range)\n            204 LOAD_FAST                3 (rows_a)\n            206 CALL                     1\n            214 GET_ITER\n        >>  216 FOR_ITER                69 (to 358)\n            220 STORE_FAST               9 (i)\n\n143         222 LOAD_FAST                0 (A)\n            224 LOAD_FAST                9 (i)\n            226 BINARY_SUBSCR\n            230 STORE_FAST              10 (Ai)\n\n144         232 LOAD_GLOBAL              3 (NULL + range)\n            242 LOAD_FAST                6 (cols_b)\n            244 CALL                     1\n            252 GET_ITER\n        >>  254 FOR_ITER                48 (to 354)\n            258 STORE_FAST              11 (j)\n\n145         260 LOAD_CONST               1 (0)\n            262 STORE_FAST              12 (s)\n\n146         264 LOAD_GLOBAL              3 (NULL + range)\n            274 LOAD_FAST                4 (cols_a)\n            276 CALL                     1\n            284 GET_ITER\n        >>  286 FOR_ITER                19 (to 328)\n            290 STORE_FAST              13 (k)\n\n147         292 LOAD_FAST               12 (s)\n            294 LOAD_FAST               10 (Ai)\n            296 LOAD_FAST               13 (k)\n            298 BINARY_SUBSCR\n            302 LOAD_FAST                1 (B)\n            304 LOAD_FAST               13 (k)\n            306 BINARY_SUBSCR\n            310 LOAD_FAST               11 (j)\n            312 BINARY_SUBSCR\n            316 BINARY_OP                5 (*)\n            320 BINARY_OP               13 (+=)\n            324 STORE_FAST              12 (s)\n            326 JUMP_BACKWARD           21 (to 286)\n\n146     >>  328 END_FOR\n\n148         330 LOAD_FAST               12 (s)\n            332 LOAD_FAST                2 (q)\n            334 BINARY_OP                6 (%)\n            338 LOAD_FAST                8 (result)\n            340 LOAD_FAST                9 (i)\n            342 BINARY_SUBSCR\n            346 LOAD_FAST               11 (j)\n            348 STORE_SUBSCR\n            352 JUMP_BACKWARD           50 (to 254)\n\n144     >>  354 END_FOR\n            356 JUMP_BACKWARD           71 (to 216)\n\n142     >>  358 END_FOR\n\n149         360 LOAD_FAST                8 (result)\n            362 RETURN_VALUE\n        >>  364 SWAP                     2\n            366 POP_TOP\n\n141         368 SWAP                     2\n            370 STORE_FAST               7 (_)\n            372 RERAISE                  0\nExceptionTable:\n  164 to 188 -> 364 [2]\n",
+      "mat_mult_mod_adaptive": "137           0 INSTRUMENTED_RESUME      0\n\n138           2 LOAD_GLOBAL_BUILTIN      1 (NULL + len)\n             12 LOAD_FAST                0 (A)\n             14 INSTRUMENTED_CALL        1\n             16 RESERVED\n             18 CACHE\n             20 CACHE\n             22 LOAD_GLOBAL_BUILTIN      1 (NULL + len)\n             32 LOAD_FAST                0 (A)\n             34 LOAD_CONST               1 (0)\n             36 BINARY_SUBSCR_LIST_INT\n             40 INSTRUMENTED_CALL        1\n             42 RESERVED\n             44 CACHE\n             46 CACHE\n             48 STORE_FAST               4 (cols_a)\n             50 STORE_FAST               3 (rows_a)\n\n139          52 LOAD_GLOBAL_BUILTIN      1 (NULL + len)\n             62 LOAD_FAST                1 (B)\n             64 INSTRUMENTED_CALL        1\n             66 RESERVED\n             68 CACHE\n             70 CACHE\n             72 LOAD_GLOBAL_BUILTIN      1 (NULL + len)\n             82 LOAD_FAST                1 (B)\n             84 LOAD_CONST               1 (0)\n             86 BINARY_SUBSCR_LIST_INT\n             90 INSTRUMENTED_CALL        1\n             92 RESERVED\n             94 CACHE\n             96 CACHE\n             98 STORE_FAST               6 (cols_b)\n            100 STORE_FAST               5 (rows_b)\n\n140         102 LOAD_FAST                4 (cols_a)\n            104 LOAD_FAST                5 (rows_b)\n            106 COMPARE_OP_INT          40 (==)\n            110 POP_JUMP_IF_TRUE        13 (to 138)\n            112 LOAD_ASSERTION_ERROR\n            114 LOAD_CONST               2 ('Shape mismatch: ')\n            116 LOAD_FAST                4 (cols_a)\n            118 FORMAT_VALUE             0\n            120 LOAD_CONST               3 (' != ')\n            122 LOAD_FAST                5 (rows_b)\n            124 FORMAT_VALUE             0\n            126 BUILD_STRING             4\n            128 INSTRUMENTED_CALL        0\n            130 RESERVED\n            132 CACHE\n            134 CACHE\n            136 RAISE_VARARGS            1\n\n141     >>  138 LOAD_GLOBAL_BUILTIN      3 (NULL + range)\n            148 LOAD_FAST                3 (rows_a)\n            150 INSTRUMENTED_CALL        1\n            152 RESERVED\n            154 CACHE\n            156 CACHE\n            158 GET_ITER\n            160 LOAD_FAST_AND_CLEAR      7 (_)\n            162 SWAP                     2\n            164 BUILD_LIST               0\n            166 SWAP                     2\n        >>  168 FOR_ITER_RANGE           8 (to 188)\n            172 STORE_FAST               7 (_)\n            174 LOAD_CONST               1 (0)\n            176 BUILD_LIST               1\n            178 LOAD_FAST                6 (cols_b)\n            180 BINARY_OP                5 (*)\n            184 LIST_APPEND              2\n            186 JUMP_BACKWARD           10 (to 168)\n        >>  188 END_FOR\n            190 STORE_FAST               8 (result)\n            192 STORE_FAST               7 (_)\n\n142         194 LOAD_GLOBAL_BUILTIN      3 (NULL + range)\n            204 LOAD_FAST                3 (rows_a)\n            206 INSTRUMENTED_CALL        1\n            208 RESERVED\n            210 CACHE\n            212 CACHE\n            214 GET_ITER\n        >>  216 FOR_ITER_RANGE          69 (to 358)\n            220 STORE_FAST               9 (i)\n\n143         222 LOAD_FAST                0 (A)\n            224 LOAD_FAST                9 (i)\n            226 BINARY_SUBSCR_LIST_INT\n            230 STORE_FAST              10 (Ai)\n\n144         232 LOAD_GLOBAL_BUILTIN      3 (NULL + range)\n            242 LOAD_FAST                6 (cols_b)\n            244 INSTRUMENTED_CALL        1\n            246 RESERVED\n            248 CACHE\n            250 CACHE\n            252 GET_ITER\n        >>  254 FOR_ITER_RANGE          48 (to 354)\n            258 STORE_FAST              11 (j)\n\n145         260 LOAD_CONST               1 (0)\n            262 STORE_FAST              12 (s)\n\n146         264 LOAD_GLOBAL_BUILTIN      3 (NULL + range)\n            274 LOAD_FAST                4 (cols_a)\n            276 INSTRUMENTED_CALL        1\n            278 RESERVED\n            280 CACHE\n            282 CACHE\n            284 GET_ITER\n        >>  286 FOR_ITER_RANGE          19 (to 328)\n            290 STORE_FAST              13 (k)\n\n147         292 LOAD_FAST               12 (s)\n            294 LOAD_FAST               10 (Ai)\n            296 LOAD_FAST               13 (k)\n            298 BINARY_SUBSCR_LIST_INT\n            302 LOAD_FAST                1 (B)\n            304 LOAD_FAST               13 (k)\n            306 BINARY_SUBSCR_LIST_INT\n            310 LOAD_FAST               11 (j)\n            312 BINARY_SUBSCR_LIST_INT\n            316 BINARY_OP_MULTIPLY_INT     5 (*)\n            320 BINARY_OP_ADD_INT       13 (+=)\n            324 STORE_FAST              12 (s)\n            326 JUMP_BACKWARD           21 (to 286)\n\n146     >>  328 END_FOR\n\n148         330 LOAD_FAST               12 (s)\n            332 LOAD_FAST                2 (q)\n            334 BINARY_OP                6 (%)\n            338 LOAD_FAST                8 (result)\n            340 LOAD_FAST                9 (i)\n            342 BINARY_SUBSCR_LIST_INT\n            346 LOAD_FAST               11 (j)\n            348 STORE_SUBSCR_LIST_INT\n            352 JUMP_BACKWARD           50 (to 254)\n\n144     >>  354 END_FOR\n            356 JUMP_BACKWARD           71 (to 216)\n\n142     >>  358 END_FOR\n\n149         360 LOAD_FAST                8 (result)\n            362 INSTRUMENTED_RETURN_VALUE     0\n        >>  364 SWAP                     2\n            366 POP_TOP\n\n141         368 SWAP                     2\n            370 STORE_FAST               7 (_)\n            372 RERAISE                  0\nExceptionTable:\n  164 to 188 -> 364 [2]\n",
+      "decrypt_it_standard": "273           0 RESUME                   0\n\n278           2 LOAD_GLOBAL              1 (NULL + isinstance)\n             12 LOAD_FAST                1 (u)\n             14 LOAD_GLOBAL              2 (list)\n             24 CALL                     2\n             32 COPY                     1\n             34 POP_JUMP_IF_FALSE       78 (to 192)\n             36 POP_TOP\n             38 LOAD_GLOBAL              5 (NULL + len)\n             48 LOAD_FAST                1 (u)\n             50 CALL                     1\n             58 LOAD_CONST               1 (0)\n             60 COMPARE_OP              68 (>)\n             64 COPY                     1\n             66 POP_JUMP_IF_FALSE       62 (to 192)\n             68 POP_TOP\n             70 LOAD_GLOBAL              1 (NULL + isinstance)\n             80 LOAD_FAST                1 (u)\n             82 LOAD_CONST               1 (0)\n             84 BINARY_SUBSCR\n             88 LOAD_GLOBAL              2 (list)\n             98 CALL                     2\n            106 COPY                     1\n            108 POP_JUMP_IF_FALSE       41 (to 192)\n            110 POP_TOP\n\n279         112 LOAD_GLOBAL              5 (NULL + len)\n            122 LOAD_FAST                1 (u)\n            124 LOAD_CONST               1 (0)\n            126 BINARY_SUBSCR\n            130 CALL                     1\n            138 LOAD_CONST               1 (0)\n            140 COMPARE_OP              68 (>)\n\n278         144 COPY                     1\n            146 POP_JUMP_IF_FALSE       22 (to 192)\n            148 POP_TOP\n\n279         150 LOAD_GLOBAL              1 (NULL + isinstance)\n            160 LOAD_FAST                1 (u)\n            162 LOAD_CONST               1 (0)\n            164 BINARY_SUBSCR\n            168 LOAD_CONST               1 (0)\n            170 BINARY_SUBSCR\n            174 LOAD_GLOBAL              2 (list)\n            184 CALL                     2\n\n278     >>  192 STORE_FAST               4 (per_bit)\n\n281         194 BUILD_LIST               0\n            196 STORE_FAST               5 (bits)\n\n282         198 LOAD_GLOBAL              7 (NULL + enumerate)\n            208 LOAD_FAST                2 (v_queue)\n            210 CALL                     1\n            218 GET_ITER\n        >>  220 FOR_ITER               102 (to 428)\n            224 UNPACK_SEQUENCE          2\n            228 STORE_FAST               6 (idx)\n            230 STORE_FAST               7 (v)\n\n283         232 LOAD_FAST                4 (per_bit)\n            234 POP_JUMP_IF_FALSE        5 (to 246)\n            236 LOAD_FAST                1 (u)\n            238 LOAD_FAST                6 (idx)\n            240 BINARY_SUBSCR\n            244 JUMP_FORWARD             1 (to 248)\n        >>  246 LOAD_FAST                1 (u)\n        >>  248 STORE_FAST               8 (u_i)\n\n284         250 LOAD_GLOBAL              9 (NULL + mat_sub_mod)\n            260 LOAD_FAST                7 (v)\n            262 LOAD_GLOBAL             11 (NULL + mat_mult_mod)\n            272 LOAD_FAST                8 (u_i)\n            274 LOAD_FAST                0 (s)\n            276 LOAD_FAST                3 (q)\n            278 CALL                     3\n            286 LOAD_FAST                3 (q)\n            288 CALL                     3\n            296 STORE_FAST               9 (diff)\n\n285         298 LOAD_FAST                9 (diff)\n            300 LOAD_CONST               1 (0)\n            302 BINARY_SUBSCR\n            306 LOAD_CONST               1 (0)\n            308 BINARY_SUBSCR\n            312 STORE_FAST              10 (val)\n\n286         314 LOAD_GLOBAL             13 (NULL + min)\n            324 LOAD_FAST               10 (val)\n            326 LOAD_FAST                3 (q)\n            328 LOAD_FAST               10 (val)\n            330 BINARY_OP               10 (-)\n            334 CALL                     2\n            342 STORE_FAST              11 (dist_to_0)\n\n287         344 LOAD_GLOBAL             15 (NULL + abs)\n            354 LOAD_FAST               10 (val)\n            356 LOAD_FAST                3 (q)\n            358 LOAD_CONST               2 (2)\n            360 BINARY_OP                2 (//)\n            364 BINARY_OP               10 (-)\n            368 CALL                     1\n            376 STORE_FAST              12 (dist_to_half)\n\n288         378 LOAD_FAST                5 (bits)\n            380 LOAD_ATTR               17 (NULL|self + append)\n            400 LOAD_FAST               11 (dist_to_0)\n            402 LOAD_FAST               12 (dist_to_half)\n            404 COMPARE_OP               2 (<)\n            408 POP_JUMP_IF_FALSE        2 (to 414)\n            410 LOAD_CONST               1 (0)\n            412 JUMP_FORWARD             1 (to 416)\n        >>  414 LOAD_CONST               3 (1)\n        >>  416 CALL                     1\n            424 POP_TOP\n            426 JUMP_BACKWARD          104 (to 220)\n\n282     >>  428 END_FOR\n\n290         430 LOAD_GLOBAL             19 (NULL + bits_to_string)\n            440 LOAD_FAST                5 (bits)\n            442 CALL                     1\n            450 RETURN_VALUE\n"
+    }
+  },
+  "part_c_constant_time": {
+    "correctness": {
+      "legacy_single_u_matches": 50,
+      "legacy_single_u_total": 50,
+      "boundary_matches": 39,
+      "boundary_total": 39,
+      "qrng_5000_exact_matches": 5000,
+      "qrng_5000_total": 5000,
+      "all_passed": true
+    },
+    "ct_results_file": "results/decrypt_ct_leak_5000.json",
+    "ct_traces_file": "results/decrypt_ct_traces_5000.json",
+    "orig_results_file": "results/decrypt_leak_5000.json",
+    "before_vs_after": {
+      "original_decrypt_it": {
+        "majority_baseline": 0.537,
+        "clean_correlations": {
+          "dec_timing_us": {
+            "pearson_r": 0.17267867621780283,
+            "pearson_p": 9.094155570066022e-35,
+            "pearson_boot_ci95": [
+              0.14371388245537656,
+              0.20337388221105876
+            ],
+            "pearson_boot_se": 0.01521554626322395,
+            "spearman_rho": 0.416621045023302,
+            "spearman_p": 3.359546498426751e-209,
+            "spearman_boot_ci95": [
+              0.39156099164922775,
+              0.4404029150596195
+            ],
+            "spearman_boot_se": 0.01258063794232712,
+            "n_bootstrap": 2000
+          },
+          "dec_cpu_user_us": {
+            "pearson_r": 0.15787364911451968,
+            "pearson_p": 2.8701630301937046e-29,
+            "pearson_boot_ci95": [
+              0.1285720638403534,
+              0.18624533995750828
+            ],
+            "pearson_boot_se": 0.014559058624403754,
+            "spearman_rho": 0.40229082791857523,
+            "spearman_p": 6.986146461371328e-194,
+            "spearman_boot_ci95": [
+              0.37780308776338445,
+              0.4260954012688431
+            ],
+            "spearman_boot_se": 0.012597465689017146,
+            "n_bootstrap": 2000
+          }
+        },
+        "clean_best_classifier": {
+          "model": "MLP",
+          "real_acc": 0.6524800000000001,
+          "roc_auc": 0.707640439044206,
+          "shuffled_acc": 0.5346,
+          "net_gap": 0.1178800000000001,
+          "q_residualized_acc": 0.6479,
+          "perm_pvalue": 0.004975124378109453
+        },
+        "clean_all_classifiers": {
+          "Random Forest": {
+            "real_acc": 0.56812,
+            "shuffled_acc": 0.5197,
+            "q_residualized_acc": 0.6033,
+            "perm_pvalue": 0.004975124378109453
+          },
+          "Gradient Boosting": {
+            "real_acc": 0.6476000000000001,
+            "shuffled_acc": 0.5306599999999999,
+            "q_residualized_acc": 0.6453200000000001,
+            "perm_pvalue": 0.004975124378109453
+          },
+          "MLP": {
+            "real_acc": 0.6524800000000001,
+            "shuffled_acc": 0.5346,
+            "q_residualized_acc": 0.6479,
+            "perm_pvalue": 0.004975124378109453
+          },
+          "Logistic Regression": {
+            "real_acc": 0.5600400000000001,
+            "shuffled_acc": 0.53636,
+            "q_residualized_acc": 0.5622,
+            "perm_pvalue": 0.004975124378109453
+          },
+          "SVM (RBF)": {
+            "real_acc": 0.65212,
+            "shuffled_acc": 0.5334399999999999,
+            "q_residualized_acc": 0.65224,
+            "perm_pvalue": 0.004975124378109453
+          }
+        },
+        "clean_best_regressor": {
+          "model": "SVR (RBF)",
+          "real_r2": 0.22595444481812293,
+          "shuffled_r2": -0.03381893550358257,
+          "q_residualized_r2": 0.22167289500570417,
+          "perm_pvalue": 0.004975124378109453
+        },
+        "clean_all_regressors": {
+          "Random Forest": {
+            "real_r2": -0.07761671623887442,
+            "shuffled_r2": -0.3859445388418934,
+            "q_residualized_r2": 0.08787712243899166,
+            "perm_pvalue": 0.004975124378109453
+          },
+          "Gradient Boosting": {
+            "real_r2": 0.2205501471593817,
+            "shuffled_r2": -0.018757991239198243,
+            "q_residualized_r2": 0.21904036148840522,
+            "perm_pvalue": 0.004975124378109453
+          },
+          "MLP": {
+            "real_r2": 0.22462372953377713,
+            "shuffled_r2": -0.01604614230150967,
+            "q_residualized_r2": 0.21977060313709595,
+            "perm_pvalue": 0.004975124378109453
+          },
+          "Linear Regression": {
+            "real_r2": 0.025058635380696748,
+            "shuffled_r2": -0.0033075403748973197,
+            "q_residualized_r2": 0.025159635964800687,
+            "perm_pvalue": 0.004975124378109453
+          },
+          "SVR (RBF)": {
+            "real_r2": 0.22595444481812293,
+            "shuffled_r2": -0.03381893550358257,
+            "q_residualized_r2": 0.22167289500570417,
+            "perm_pvalue": 0.004975124378109453
+          }
+        },
+        "tm2_correlations": {
+          "tm_dec_timing_us": {
+            "pearson_r": 0.6398016949840772,
+            "pearson_p": 0.0,
+            "pearson_boot_ci95": [
+              0.5939347188784292,
+              0.6868436701479478
+            ],
+            "pearson_boot_se": 0.023776658518250893,
+            "spearman_rho": 0.8240914172997691,
+            "spearman_p": 0.0,
+            "spearman_boot_ci95": [
+              0.8113088708739699,
+              0.8352292258163829
+            ],
+            "spearman_boot_se": 0.006045901684948842,
+            "n_bootstrap": 2000
+          },
+          "tm_dec_cpu_user_us": {
+            "pearson_r": 0.6240320500111078,
+            "pearson_p": 0.0,
+            "pearson_boot_ci95": [
+              0.5788970015444103,
+              0.6727870141990288
+            ],
+            "pearson_boot_se": 0.02383334664638806,
+            "spearman_rho": 0.8222524367208301,
+            "spearman_p": 0.0,
+            "spearman_boot_ci95": [
+              0.8096613971867369,
+              0.8335768370477875
+            ],
+            "spearman_boot_se": 0.006121371926431583,
+            "n_bootstrap": 2000
+          }
+        },
+        "tm2_best_classifier": {
+          "model": "Gradient Boosting",
+          "real_acc": 0.8437199999999998,
+          "perm_pvalue": 0.004975124378109453
+        },
+        "tm2_best_regressor": {
+          "model": "MLP",
+          "real_r2": 0.6877105805139091,
+          "perm_pvalue": 0.004975124378109453
+        }
+      },
+      "constant_time_decrypt_it": {
+        "majority_baseline": 0.537,
+        "clean_correlations": {
+          "dec_timing_us": {
+            "pearson_r": -0.023846680771741357,
+            "pearson_p": 0.09178942291466058,
+            "pearson_boot_ci95": [
+              -0.052652550510884404,
+              0.003926828917759643
+            ],
+            "pearson_boot_se": 0.014412081119214118,
+            "spearman_rho": -0.025838520677703068,
+            "spearman_p": 0.06771367991627317,
+            "spearman_boot_ci95": [
+              -0.054096638521862354,
+              0.001042217815688709
+            ],
+            "spearman_boot_se": 0.014288122364783554,
+            "n_bootstrap": 2000
+          },
+          "dec_cpu_user_us": {
+            "pearson_r": -0.023592796609245015,
+            "pearson_p": 0.09530030410542975,
+            "pearson_boot_ci95": [
+              -0.05178740401485248,
+              0.005699771078019009
+            ],
+            "pearson_boot_se": 0.01462594967792866,
+            "spearman_rho": -0.032152743627833096,
+            "spearman_p": 0.022992355894540118,
+            "spearman_boot_ci95": [
+              -0.059350501049048106,
+              -0.005068609463088721
+            ],
+            "spearman_boot_se": 0.014010094057187205,
+            "n_bootstrap": 2000
+          }
+        },
+        "clean_best_classifier": {
+          "model": "Logistic Regression",
+          "real_acc": 0.5355599999999999,
+          "roc_auc": 0.5056134190828979,
+          "shuffled_acc": 0.53656,
+          "net_gap": -0.001000000000000112,
+          "q_residualized_acc": 0.5355800000000001,
+          "perm_pvalue": 0.7064676616915423
+        },
+        "clean_all_classifiers": {
+          "Random Forest": {
+            "real_acc": 0.51604,
+            "shuffled_acc": 0.4913,
+            "q_residualized_acc": 0.51118,
+            "perm_pvalue": 0.18407960199004975
+          },
+          "Gradient Boosting": {
+            "real_acc": 0.5275,
+            "shuffled_acc": 0.51826,
+            "q_residualized_acc": 0.52484,
+            "perm_pvalue": 0.4228855721393035
+          },
+          "MLP": {
+            "real_acc": 0.53528,
+            "shuffled_acc": 0.5352000000000001,
+            "q_residualized_acc": 0.5353,
+            "perm_pvalue": 0.7960199004975125
+          },
+          "Logistic Regression": {
+            "real_acc": 0.5355599999999999,
+            "shuffled_acc": 0.53656,
+            "q_residualized_acc": 0.5355800000000001,
+            "perm_pvalue": 0.7064676616915423
+          },
+          "SVM (RBF)": {
+            "real_acc": 0.53378,
+            "shuffled_acc": 0.5342600000000001,
+            "q_residualized_acc": 0.53382,
+            "perm_pvalue": 0.9751243781094527
+          }
+        },
+        "clean_best_regressor": {
+          "model": "Linear Regression",
+          "real_r2": -0.0019593452213911267,
+          "shuffled_r2": -0.002351822821916021,
+          "q_residualized_r2": -0.0019449989494631724,
+          "perm_pvalue": 0.7164179104477612
+        },
+        "clean_all_regressors": {
+          "Random Forest": {
+            "real_r2": -0.37493820508761944,
+            "shuffled_r2": -0.3985469446641773,
+            "q_residualized_r2": -0.18690725319601623,
+            "perm_pvalue": 0.7164179104477612
+          },
+          "Gradient Boosting": {
+            "real_r2": -0.018747942827431415,
+            "shuffled_r2": -0.022003434893115598,
+            "q_residualized_r2": -0.022792244641656287,
+            "perm_pvalue": 0.8009950248756219
+          },
+          "MLP": {
+            "real_r2": -0.004861871675875194,
+            "shuffled_r2": -0.004616404522599995,
+            "q_residualized_r2": -0.004535175237871851,
+            "perm_pvalue": 0.6666666666666666
+          },
+          "Linear Regression": {
+            "real_r2": -0.0019593452213911267,
+            "shuffled_r2": -0.002351822821916021,
+            "q_residualized_r2": -0.0019449989494631724,
+            "perm_pvalue": 0.7164179104477612
+          },
+          "SVR (RBF)": {
+            "real_r2": -0.03438237572060314,
+            "shuffled_r2": -0.03425406668643212,
+            "q_residualized_r2": -0.03415713701665327,
+            "perm_pvalue": 0.8507462686567164
+          }
+        },
+        "tm2_correlations": {
+          "tm_dec_timing_us": {
+            "pearson_r": 0.00322196630249549,
+            "pearson_p": 0.8198242340171625,
+            "pearson_boot_ci95": [
+              -0.024603820499649272,
+              0.028495695504307587
+            ],
+            "pearson_boot_se": 0.01347866290188859,
+            "spearman_rho": 0.010290038129090014,
+            "spearman_p": 0.46694855436095994,
+            "spearman_boot_ci95": [
+              -0.017419876282770128,
+              0.03687744834013616
+            ],
+            "spearman_boot_se": 0.013767573511003921,
+            "n_bootstrap": 2000
+          },
+          "tm_dec_cpu_user_us": {
+            "pearson_r": -0.0016604126709939431,
+            "pearson_p": 0.9065592244103341,
+            "pearson_boot_ci95": [
+              -0.032292534815596,
+              0.027015740948852375
+            ],
+            "pearson_boot_se": 0.015174316638007295,
+            "spearman_rho": 0.003196706955240411,
+            "spearman_p": 0.8212127935698665,
+            "spearman_boot_ci95": [
+              -0.0241962924047434,
+              0.030088901292017165
+            ],
+            "spearman_boot_se": 0.013838520303187387,
+            "n_bootstrap": 2000
+          }
+        },
+        "tm2_best_classifier": {
+          "model": "SVM (RBF)",
+          "real_acc": 0.53932,
+          "perm_pvalue": 0.04975124378109453
+        },
+        "tm2_best_regressor": {
+          "model": "Linear Regression",
+          "real_r2": -0.0026003086839464285,
+          "perm_pvalue": 0.23880597014925373
+        }
+      }
+    }
+  }
+}

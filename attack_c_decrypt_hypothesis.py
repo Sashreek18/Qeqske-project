@@ -34,6 +34,10 @@ import os
 import pstats
 import time
 
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
 import numpy as np
 from scipy import stats as sp_stats
 
@@ -131,11 +135,20 @@ def run_part_a_microbenchmark():
         "os.sched_setaffinity unavailable on macOS XNU; mitigated via gc.collect(), "
         "warm-up, randomized order, and 40-call batching."
     )
+    orig_affinity = None
     if hasattr(os, "sched_setaffinity"):
+        orig_affinity = os.sched_getaffinity(0)
         os.sched_setaffinity(0, {0})
         cpu_pinned = True
         cpu_pin_note = "Pinned to CPU core 0 via os.sched_setaffinity(0, {0})."
+    try:
+        return _run_part_a_microbenchmark_body(cpu_pinned, cpu_pin_note)
+    finally:
+        if orig_affinity is not None:
+            os.sched_setaffinity(0, orig_affinity)
 
+
+def _run_part_a_microbenchmark_body(cpu_pinned, cpu_pin_note):
     rng_np = np.random.RandomState(SEED)
     q = 32771
     u_list = [

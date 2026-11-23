@@ -35,6 +35,15 @@ import time
 import tracemalloc
 import warnings
 
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
+try:
+    import resource
+except ImportError:
+    resource = None
+
 import numpy as np
 import psutil
 from scipy import stats as sp_stats
@@ -221,6 +230,17 @@ def _run_tm_warmup(warmup_pool, count, start_idx=0, decrypt_fn=decrypt_it):
         tracemalloc.stop()
 
 
+def _get_cpu_user_seconds(proc):
+    """High-resolution process user CPU time in seconds.
+    Uses resource.getrusage(RUSAGE_SELF).ru_utime (microsecond resolution on
+    Linux and macOS) instead of psutil.Process().cpu_times().user, which
+    quantizes to 10 ms jiffies (/proc/<pid>/stat) on Linux.
+    """
+    if resource is not None:
+        return resource.getrusage(resource.RUSAGE_SELF).ru_utime
+    return proc.cpu_times().user
+
+
 def collect_traces(trials, warmup_pool, decrypt_fn=decrypt_it):
     """Run randomized, warm-up-interleaved clean & tracemalloc-wrapped passes."""
     proc = psutil.Process(os.getpid())
@@ -249,16 +269,16 @@ def collect_traces(trials, warmup_pool, decrypt_fn=decrypt_it):
         tr = trials[int(idx)]
         s, u, v_queue, q = tr["s"], tr["u"], tr["v_queue"], tr["q"]
 
-        cpu_before = proc.cpu_times()
+        cpu_before = _get_cpu_user_seconds(proc)
         t0 = time.perf_counter()
         dec_out = decrypt_fn(s, u, v_queue, q)
         elapsed = time.perf_counter() - t0
-        cpu_after = proc.cpu_times()
+        cpu_after = _get_cpu_user_seconds(proc)
 
         rec = records[int(idx)]
         rec["exec_order_pos"] = int(pos)
         rec["dec_timing_us"] = float(elapsed * 1e6)
-        rec["dec_cpu_user_us"] = float((cpu_after.user - cpu_before.user) * 1e6)
+        rec["dec_cpu_user_us"] = float((cpu_after - cpu_before) * 1e6)
         rec["decryption_correct"] = bool(dec_out == FIXED_PLAINTEXT)
     pass1_wall_s = time.perf_counter() - t_pass1_0
 
@@ -279,11 +299,11 @@ def collect_traces(trials, warmup_pool, decrypt_fn=decrypt_it):
         s, u, v_queue, q = tr["s"], tr["u"], tr["v_queue"], tr["q"]
 
         tracemalloc.start()
-        cpu_before = proc.cpu_times()
+        cpu_before = _get_cpu_user_seconds(proc)
         t0 = time.perf_counter()
         dec_out = decrypt_fn(s, u, v_queue, q)
         elapsed = time.perf_counter() - t0
-        cpu_after = proc.cpu_times()
+        cpu_after = _get_cpu_user_seconds(proc)
         _, peak = tracemalloc.get_traced_memory()
         snap = tracemalloc.take_snapshot()
         n_allocs = sum(stat.count for stat in snap.statistics("lineno"))
@@ -292,7 +312,7 @@ def collect_traces(trials, warmup_pool, decrypt_fn=decrypt_it):
         rec = records[int(idx)]
         rec["tm_exec_order_pos"] = int(pos)
         rec["tm_dec_timing_us"] = float(elapsed * 1e6)
-        rec["tm_dec_cpu_user_us"] = float((cpu_after.user - cpu_before.user) * 1e6)
+        rec["tm_dec_cpu_user_us"] = float((cpu_after - cpu_before) * 1e6)
         rec["dec_ram_peak_bytes"] = int(peak)
         rec["dec_num_allocations"] = int(n_allocs)
         rec["tm_decryption_correct"] = bool(dec_out == FIXED_PLAINTEXT)
@@ -1056,6 +1076,11 @@ def run_decrypt_leak_pipeline(
         "experiment": {
             "decrypt_label": label,
             "decrypt_function": getattr(decrypt_fn, "__name__", str(decrypt_fn)),
+            "cpu_user_timer": (
+                "resource.getrusage(RUSAGE_SELF).ru_utime"
+                if resource is not None
+                else "psutil.Process.cpu_times.user"
+            ),
             "n_trials": N_TRIALS,
             "n": N_PARAM,
             "k": K_PARAM,
