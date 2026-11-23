@@ -25,6 +25,7 @@ Saves:
   - results/decrypt_hypothesis_ct_summary.md
 """
 
+import argparse
 import cProfile
 import dis
 import gc
@@ -41,10 +42,12 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 import numpy as np
 from scipy import stats as sp_stats
 
+from env_metadata import format_perm_pvalue, get_environment_metadata
 from attack_c_decrypt_5000 import (
     FIXED_PLAINTEXT,
     K_PARAM,
     N_PARAM,
+    N_PERMUTATIONS,
     SEED,
     paired_correlation_with_bootstrap,
     pregenerate_trials,
@@ -237,6 +240,79 @@ def _run_part_a_microbenchmark_body(cpu_pinned, cpu_pin_note):
     numpy_by_weight = {str(w): _summarize_us(np_samples[w]) for w in range(9)}
     np_corr = paired_correlation_with_bootstrap(all_t_np, all_w_np)
 
+    # --- 2b. Component decomposition of the residual NumPy weight trend ---
+    secrets_np = {
+        w: [np.asarray(s, dtype=np.int64) for s in secrets_by_w[w]]
+        for w in range(9)
+    }
+    diffs_by_w = {
+        w: [v_arr - np.matmul(u_arr, s_np) for s_np in secrets_np[w]]
+        for w in range(9)
+    }
+    nonneg_offset = np.int64(N_PARAM * q)
+    frac_negative_diff_by_weight = {
+        str(w): float(np.mean([np.mean(d < 0) for d in diffs_by_w[w]]))
+        for w in range(9)
+    }
+
+    def _bench_np_component(fn, seed_offset):
+        gc.collect()
+        for _ in range(200):
+            _ = fn(4, 0)
+        comp_samples = {w: [] for w in range(9)}
+        all_w, all_t = [], []
+        perm_c = np.random.RandomState(SEED + seed_offset).permutation(len(schedule))
+        for step, idx in enumerate(perm_c):
+            if step % 300 == 0:
+                gc.collect()
+            w, rep = schedule[int(idx)]
+            rep_idx = rep % len(secrets_by_w[w])
+            t0 = time.perf_counter_ns()
+            _ = fn(w, rep_idx)
+            dt_us = (time.perf_counter_ns() - t0) / 1000.0
+            comp_samples[w].append(dt_us)
+            all_w.append(w)
+            all_t.append(dt_us)
+        by_w_med = {str(w): float(_summarize_us(comp_samples[w])["median_us"]) for w in range(9)}
+        return {
+            "by_weight_median_us": by_w_med,
+            "w0_median_us": by_w_med["0"],
+            "w8_median_us": by_w_med["8"],
+            "delta_w8_minus_w0_us": float(by_w_med["8"] - by_w_med["0"]),
+            "weight_correlation": paired_correlation_with_bootstrap(all_t, all_w),
+        }
+
+    component_specs = [
+        ("matmul_only", "np.matmul(u_arr, s_np)", lambda w, i: np.matmul(u_arr, secrets_np[w][i])),
+        ("sub_only", "v_arr - np.matmul(u_arr, s_np)", lambda w, i: v_arr - np.matmul(u_arr, secrets_np[w][i])),
+        ("mod_only", "diff % q64 (can be negative)", lambda w, i: diffs_by_w[w][i] % q64),
+        ("mod_nonneg_offset", "(diff + 4*q64) % q64 (all >= 0)", lambda w, i: (diffs_by_w[w][i] + nonneg_offset) % q64),
+        ("asarray_only", "np.asarray(s_py, dtype=np.int64)", lambda w, i: np.asarray(secrets_by_w[w][i], dtype=np.int64)),
+        ("full_with_nonneg_offset", "(v - u@asarray(s) + 4*q64) % q64", lambda w, i: (v_arr - np.matmul(u_arr, np.asarray(secrets_by_w[w][i], dtype=np.int64)) + nonneg_offset) % q64),
+        ("preconv_with_nonneg_offset", "(v - u@s_np + 4*q64) % q64", lambda w, i: (v_arr - np.matmul(u_arr, secrets_np[w][i]) + nonneg_offset) % q64),
+    ]
+    np_decomp = {}
+    for offset_idx, (key, expr, fn) in enumerate(component_specs):
+        np_decomp[key] = {
+            "expression": expr,
+            **_bench_np_component(fn, seed_offset=10 + offset_idx),
+        }
+
+    numpy_residual_trend_decomposition = {
+        "frac_negative_diff_by_weight": frac_negative_diff_by_weight,
+        "components": np_decomp,
+        "mechanism_summary": (
+            "np.matmul(u_arr, s_np) and (v_arr - u_arr @ s_np) alone show zero positive weight trend. "
+            "Almost the entire ~0.3 us residual trend comes from signed floor-modulo (`diff % q64`): "
+            "at weight=0, diff = v_arr >= 0 (0% negative), whereas at weight=8 ~34% of diff entries are negative; "
+            "NumPy int64 remainder executes a sign-fixup branch when the dividend is negative, causing branch "
+            "mispredictions as negative elements increase. Adding a non-negative offset (+n*q64) before `% q64` "
+            "eliminates the modulo trend; the remaining ~0.03 us difference in full expressions comes from "
+            "np.asarray(s) unpacking Python int 0 vs +/-1. Across full 40 us decrypt_it_constant_time calls, "
+            "this sub-microsecond micro-trend is buried beneath wrapper/OS jitter (5,000-trial Spearman rho=-0.0258, p=0.068)."
+        ),
+    }
+
     # --- 3. Operand-value isolation: all-0 vs all-+1 vs all--1 on mat_mult_mod ---
     const_secrets = {
         "all_0": [[0, 0] for _ in range(N_PARAM)],
@@ -321,6 +397,7 @@ def _run_part_a_microbenchmark_body(cpu_pinned, cpu_pin_note):
         "mat_mult_mod_weight_correlation": py_corr,
         "numpy_matmul_by_weight": numpy_by_weight,
         "numpy_matmul_weight_correlation": np_corr,
+        "numpy_residual_trend_decomposition": numpy_residual_trend_decomposition,
         "operand_isolation_40calls": ctrl_stats,
         "operand_isolation_tests": {
             "all_pos1_vs_all_0_delta_median_us": float(
@@ -540,12 +617,14 @@ def _extract_comparison(orig_json, ct_json):
     def _side(res):
         clean = res["clean_uninstrumented"]
         tm2 = res["tracemalloc_instrumented_2feat"]
+        n_perm = res.get("experiment", {}).get("n_permutations", N_PERMUTATIONS)
         best_clf = max(clean["classification"], key=lambda k: clean["classification"][k]["real"]["accuracy"]["mean"])
         best_reg = max(clean["regression"], key=lambda k: clean["regression"][k]["real"]["r2"]["mean"])
         best_tm_clf = max(tm2["classification"], key=lambda k: tm2["classification"][k]["real"]["accuracy"]["mean"])
         best_tm_reg = max(tm2["regression"], key=lambda k: tm2["regression"][k]["real"]["r2"]["mean"])
         return {
             "majority_baseline": res["targets"]["majority_baseline"],
+            "n_permutations": int(n_perm),
             "clean_correlations": clean["correlations"],
             "clean_best_classifier": {
                 "model": best_clf,
@@ -555,6 +634,7 @@ def _extract_comparison(orig_json, ct_json):
                 "net_gap": clean["classification"][best_clf]["gap_real_minus_shuffled"],
                 "q_residualized_acc": clean["classification"][best_clf]["q_residualized"]["accuracy"]["mean"],
                 "perm_pvalue": clean["classification"][best_clf]["permutation_test"]["pvalue"],
+                "perm_n_permutations": clean["classification"][best_clf]["permutation_test"].get("n_permutations", n_perm),
             },
             "clean_all_classifiers": {
                 m: {
@@ -562,6 +642,7 @@ def _extract_comparison(orig_json, ct_json):
                     "shuffled_acc": v["shuffled_control"]["accuracy"]["mean"],
                     "q_residualized_acc": v["q_residualized"]["accuracy"]["mean"],
                     "perm_pvalue": v["permutation_test"]["pvalue"],
+                    "perm_n_permutations": v["permutation_test"].get("n_permutations", n_perm),
                 }
                 for m, v in clean["classification"].items()
             },
@@ -571,6 +652,8 @@ def _extract_comparison(orig_json, ct_json):
                 "shuffled_r2": clean["regression"][best_reg]["shuffled_control"]["r2"]["mean"],
                 "q_residualized_r2": clean["regression"][best_reg]["q_residualized"]["r2"]["mean"],
                 "perm_pvalue": clean["regression"][best_reg]["permutation_test"]["pvalue"],
+                "perm_n_permutations": clean["regression"][best_reg]["permutation_test"].get("n_permutations", n_perm),
+                "any_positive_r2": bool(clean["regression"][best_reg]["real"]["r2"]["mean"] > 0.0),
             },
             "clean_all_regressors": {
                 m: {
@@ -578,6 +661,8 @@ def _extract_comparison(orig_json, ct_json):
                     "shuffled_r2": v["shuffled_control"]["r2"]["mean"],
                     "q_residualized_r2": v["q_residualized"]["r2"]["mean"],
                     "perm_pvalue": v["permutation_test"]["pvalue"],
+                    "perm_n_permutations": v["permutation_test"].get("n_permutations", n_perm),
+                    "negative_r2_caveat": bool(v["real"]["r2"]["mean"] <= 0.0),
                 }
                 for m, v in clean["regression"].items()
             },
@@ -586,11 +671,14 @@ def _extract_comparison(orig_json, ct_json):
                 "model": best_tm_clf,
                 "real_acc": tm2["classification"][best_tm_clf]["real"]["accuracy"]["mean"],
                 "perm_pvalue": tm2["classification"][best_tm_clf]["permutation_test"]["pvalue"],
+                "perm_n_permutations": tm2["classification"][best_tm_clf]["permutation_test"].get("n_permutations", n_perm),
             },
             "tm2_best_regressor": {
                 "model": best_tm_reg,
                 "real_r2": tm2["regression"][best_tm_reg]["real"]["r2"]["mean"],
                 "perm_pvalue": tm2["regression"][best_tm_reg]["permutation_test"]["pvalue"],
+                "perm_n_permutations": tm2["regression"][best_tm_reg]["permutation_test"].get("n_permutations", n_perm),
+                "any_positive_r2": bool(tm2["regression"][best_tm_reg]["real"]["r2"]["mean"] > 0.0),
             },
         }
 
@@ -604,15 +692,25 @@ def generate_hypothesis_summary_markdown(json_path, md_path):
     with open(json_path, "r") as f:
         d = json.load(f)
 
+    env = d.get("environment")
     pa = d["part_a_microbenchmark"]
     pb = d["part_b_profile_dis"]
     pc = d["part_c_constant_time"]
     orig = pc["before_vs_after"]["original_decrypt_it"]
     ct = pc["before_vs_after"]["constant_time_decrypt_it"]
+    n_perm_orig = orig.get("n_permutations", N_PERMUTATIONS)
+    n_perm_ct = ct.get("n_permutations", N_PERMUTATIONS)
 
     lines = [
         "# Hypothesis Verification, Profiling & Constant-Time `decrypt_it` Report",
         "",
+    ]
+    if env:
+        lines.extend([
+            f"- **Environment:** `{env.get('os')}` (`{env.get('platform')}`), CPU `{env.get('cpu_model')}`, Python `{env.get('python_version')}`, NumPy `{env.get('numpy_version')}`",
+            "",
+        ])
+    lines.extend([
         "## Part (a): `mat_mult_mod` Weight 0..8 Microbenchmark",
         f"- **CPU Pinning:** `{pa['cpu_pinned']}` ({pa['cpu_pin_note']})",
         f"- **Batching:** `{pa['batch_calls']}` calls/batch (`1 HELLO` decrypt worth), `{pa['reps_per_weight']}` randomized reps per weight (`0..8`)",
@@ -621,13 +719,32 @@ def generate_hypothesis_summary_markdown(json_path, md_path):
         "",
         "| Weight | `mat_mult_mod` Batch Med (µs) | Batch IQR (µs) | Per-Call Med (µs) | NumPy `int64` Batch Med (µs) | NumPy IQR (µs) |",
         "| :---: | :---: | :---: | :---: | :---: | :---: |",
-    ]
+    ])
     for w in range(9):
         py_w = pa["mat_mult_mod_by_weight"][str(w)]
         np_w = pa["numpy_matmul_by_weight"][str(w)]
         lines.append(
             f"| {w} | {py_w['median_us']:.2f} | {py_w['iqr_us']:.2f} | {py_w['median_per_call_us']:.3f} | {np_w['median_us']:.2f} | {np_w['iqr_us']:.2f} |"
         )
+
+    decomp = pa.get("numpy_residual_trend_decomposition")
+    if decomp:
+        frac_neg = decomp["frac_negative_diff_by_weight"]
+        lines.extend([
+            "",
+            "### Explaining the Residual NumPy Weight Trend",
+            f"- **Root cause:** {decomp['mechanism_summary']}",
+            f"- **Negative-dividend fraction `P(v - u@s < 0)` by weight:** `w=0: {frac_neg['0']*100:.1f}%`, `w=1: {frac_neg['1']*100:.1f}%`, `w=2: {frac_neg['2']*100:.1f}%`, `w=4: {frac_neg['4']*100:.1f}%`, `w=8: {frac_neg['8']*100:.1f}%`.",
+            "",
+            "| Isolated Component | `w=0` Med (µs) | `w=8` Med (µs) | Δ (`w8 − w0`) | Spearman ρ vs. Weight | Spearman p |",
+            "| :--- | :---: | :---: | :---: | :---: | :---: |",
+        ])
+        for comp_key, comp_data in decomp["components"].items():
+            cc = comp_data["weight_correlation"]
+            lines.append(
+                f"| `{comp_data['expression']}` | {comp_data['w0_median_us']:.3f} | {comp_data['w8_median_us']:.3f} | "
+                f"{comp_data['delta_w8_minus_w0_us']:+.3f} µs | {cc['spearman_rho']:+.4f} | {cc['spearman_p']:.2e} |"
+            )
 
     iso = pa["operand_isolation_40calls"]
     isot = pa["operand_isolation_tests"]
@@ -646,6 +763,12 @@ def generate_hypothesis_summary_markdown(json_path, md_path):
         lines.append(f"  - `{r['func']}`: `{r['ncalls']}` calls, `tottime = {r['tottime_s']:.4f} s` (`{r['pct_tottime']:.1f}%`)")
 
     pw = pb["paired_w0_vs_w8"]
+    orig_reg_str = f"{orig['clean_best_regressor']['real_r2']:+.4f} ({orig['clean_best_regressor']['model']})"
+    if ct["clean_best_regressor"]["real_r2"] <= 0.0:
+        ct_reg_str = f"All models R² < 0 (best {ct['clean_best_regressor']['real_r2']:+.4f}, {ct['clean_best_regressor']['model']}; worse than mean baseline)"
+    else:
+        ct_reg_str = f"{ct['clean_best_regressor']['real_r2']:+.4f} ({ct['clean_best_regressor']['model']})"
+
     lines.extend([
         f"- **Paired `w=0` vs `w=8` (identical `(u, v_queue, q)`):** `w=0` total `{pw['w0_total_tottime_s']:.4f} s` vs `w=8` total `{pw['w8_total_tottime_s']:.4f} s` (`Δ = {pw['delta_w8_minus_w0_s']:+.4f} s`)",
         "",
@@ -659,11 +782,13 @@ def generate_hypothesis_summary_markdown(json_path, md_path):
         f"| `dec_cpu_user_us` Pearson r | {orig['clean_correlations']['dec_cpu_user_us']['pearson_r']:+.4f} | {ct['clean_correlations']['dec_cpu_user_us']['pearson_r']:+.4f} |",
         f"| `dec_cpu_user_us` Spearman ρ | {orig['clean_correlations']['dec_cpu_user_us']['spearman_rho']:+.4f} | {ct['clean_correlations']['dec_cpu_user_us']['spearman_rho']:+.4f} |",
         f"| Best Classifier Accuracy (Model) | {orig['clean_best_classifier']['real_acc']*100:.2f}% ({orig['clean_best_classifier']['model']}) | {ct['clean_best_classifier']['real_acc']*100:.2f}% ({ct['clean_best_classifier']['model']}) |",
-        f"| Best Classifier Perm p-value | {orig['clean_best_classifier']['perm_pvalue']:.4f} | {ct['clean_best_classifier']['perm_pvalue']:.4f} |",
-        f"| Best Regressor R² (Model) | {orig['clean_best_regressor']['real_r2']:+.4f} ({orig['clean_best_regressor']['model']}) | {ct['clean_best_regressor']['real_r2']:+.4f} ({ct['clean_best_regressor']['model']}) |",
-        f"| Best Regressor Perm p-value | {orig['clean_best_regressor']['perm_pvalue']:.4f} | {ct['clean_best_regressor']['perm_pvalue']:.4f} |",
+        f"| Best Classifier Perm p-value | {format_perm_pvalue(orig['clean_best_classifier']['perm_pvalue'], n_perm_orig)} | {format_perm_pvalue(ct['clean_best_classifier']['perm_pvalue'], n_perm_ct)} |",
+        f"| Best Regressor R² (Model) | {orig_reg_str} | {ct_reg_str} |",
+        f"| Best Regressor Perm p-value | {format_perm_pvalue(orig['clean_best_regressor']['perm_pvalue'], n_perm_orig)} | {format_perm_pvalue(ct['clean_best_regressor']['perm_pvalue'], n_perm_ct)} |",
         f"| `tracemalloc` 2-feat Timing Spearman ρ | {orig['tm2_correlations']['tm_dec_timing_us']['spearman_rho']:+.4f} | {ct['tm2_correlations']['tm_dec_timing_us']['spearman_rho']:+.4f} |",
-        f"| `tracemalloc` 2-feat Best Clf Acc | {orig['tm2_best_classifier']['real_acc']*100:.2f}% (p={orig['tm2_best_classifier']['perm_pvalue']:.4f}) | {ct['tm2_best_classifier']['real_acc']*100:.2f}% (p={ct['tm2_best_classifier']['perm_pvalue']:.4f}) |",
+        f"| `tracemalloc` 2-feat Best Clf Acc | {orig['tm2_best_classifier']['real_acc']*100:.2f}% (p {format_perm_pvalue(orig['tm2_best_classifier']['perm_pvalue'], n_perm_orig)}) | {ct['tm2_best_classifier']['real_acc']*100:.2f}% (p {format_perm_pvalue(ct['tm2_best_classifier']['perm_pvalue'], n_perm_ct)}) |",
+        "",
+        f"> *Notes:* Permutation p-values at the `N={n_perm_orig}` floor are reported as `< 1/{n_perm_orig + 1} ({1.0/(n_perm_orig + 1):.4f})`. On `decrypt_it_constant_time`, all 5 regression models yield `R² < 0` (worse than predicting the sample mean), confirming zero regression skill; on original `decrypt_it`, unpruned Random Forest (`R² = {orig['clean_all_regressors']['Random Forest']['real_r2']:+.4f}`) is similarly caveated while SVR/MLP/GB reach `R² = +0.2206` to `+0.2260`.",
     ])
 
     with open(md_path, "w") as f:
@@ -674,10 +799,13 @@ def print_hypothesis_report(results):
     pa = results["part_a_microbenchmark"]
     pb = results["part_b_profile_dis"]
     pc = results["part_c_constant_time"]
+    env = results.get("environment")
 
     print("\n" + "=" * 88)
     print("PART (a): MICROBENCHMARK mat_mult_mod (WEIGHT 0..8) & OPERAND CONTROLS")
     print("=" * 88)
+    if env:
+        print(f"Environment: {env.get('os')} | CPU: {env.get('cpu_model')} | Python {env.get('python_version')} | NumPy {env.get('numpy_version')}")
     print(f"CPU pinned: {pa['cpu_pinned']} | {pa['cpu_pin_note']}")
     print(f"Pure-Python mat_mult_mod (40 calls/batch x {pa['reps_per_weight']} reps):")
     print(f"  {'W':>2} | {'Py Med (us)':>12} | {'Py IQR (us)':>11} | {'Py/call (us)':>12} | {'NP Med (us)':>12} | {'NP IQR (us)':>11}")
@@ -692,6 +820,16 @@ def print_hypothesis_report(results):
     nc_c = pa["numpy_matmul_weight_correlation"]
     print(f"  Python mat_mult_mod vs weight: Spearman rho={pc_c['spearman_rho']:+.4f} [{pc_c['spearman_boot_ci95'][0]:+.4f},{pc_c['spearman_boot_ci95'][1]:+.4f}] (p={pc_c['spearman_p']:.2e}), Pearson r={pc_c['pearson_r']:+.4f}")
     print(f"  NumPy int64 matmul vs weight : Spearman rho={nc_c['spearman_rho']:+.4f} [{nc_c['spearman_boot_ci95'][0]:+.4f},{nc_c['spearman_boot_ci95'][1]:+.4f}] (p={nc_c['spearman_p']:.2e}), Pearson r={nc_c['pearson_r']:+.4f}")
+
+    decomp = pa.get("numpy_residual_trend_decomposition")
+    if decomp:
+        print("\n  NumPy Residual Trend Component Decomposition:")
+        for _, comp in decomp["components"].items():
+            cc = comp["weight_correlation"]
+            print(
+                f"    {comp['expression']:<40}: w0={comp['w0_median_us']:.3f}us -> w8={comp['w8_median_us']:.3f}us "
+                f"({comp['delta_w8_minus_w0_us']:+.3f}us), rho={cc['spearman_rho']:+.4f} (p={cc['spearman_p']:.2e})"
+            )
 
     iso = pa["operand_isolation_40calls"]
     isot = pa["operand_isolation_tests"]
@@ -728,18 +866,61 @@ def print_hypothesis_report(results):
     print(f"  Correctness: legacy={cc['legacy_single_u_matches']}/{cc['legacy_single_u_total']}, boundary={cc['boundary_matches']}/{cc['boundary_total']}, 5000_QRNG={cc['qrng_5000_exact_matches']}/{cc['qrng_5000_total']}")
     orig = pc["before_vs_after"]["original_decrypt_it"]
     ct = pc["before_vs_after"]["constant_time_decrypt_it"]
-    print(f"  Original decrypt_it       : timing r={orig['clean_correlations']['dec_timing_us']['pearson_r']:+.4f}, rho={orig['clean_correlations']['dec_timing_us']['spearman_rho']:+.4f} | Best Clf={orig['clean_best_classifier']['real_acc']*100:.2f}% (p={orig['clean_best_classifier']['perm_pvalue']:.4f}) | Best Reg R2={orig['clean_best_regressor']['real_r2']:+.4f} (p={orig['clean_best_regressor']['perm_pvalue']:.4f})")
-    print(f"  Constant-time decrypt_it  : timing r={ct['clean_correlations']['dec_timing_us']['pearson_r']:+.4f}, rho={ct['clean_correlations']['dec_timing_us']['spearman_rho']:+.4f} | Best Clf={ct['clean_best_classifier']['real_acc']*100:.2f}% (p={ct['clean_best_classifier']['perm_pvalue']:.4f}) | Best Reg R2={ct['clean_best_regressor']['real_r2']:+.4f} (p={ct['clean_best_regressor']['perm_pvalue']:.4f})")
-    print(f"  [tracemalloc 2-feat] Orig : rho={orig['tm2_correlations']['tm_dec_timing_us']['spearman_rho']:+.4f}, Clf={orig['tm2_best_classifier']['real_acc']*100:.2f}% (p={orig['tm2_best_classifier']['perm_pvalue']:.4f}) | CT: rho={ct['tm2_correlations']['tm_dec_timing_us']['spearman_rho']:+.4f}, Clf={ct['tm2_best_classifier']['real_acc']*100:.2f}% (p={ct['tm2_best_classifier']['perm_pvalue']:.4f})")
+    no = orig.get("n_permutations", N_PERMUTATIONS)
+    nc = ct.get("n_permutations", N_PERMUTATIONS)
+    print(
+        f"  Original decrypt_it       : timing r={orig['clean_correlations']['dec_timing_us']['pearson_r']:+.4f}, "
+        f"rho={orig['clean_correlations']['dec_timing_us']['spearman_rho']:+.4f} | "
+        f"Best Clf={orig['clean_best_classifier']['real_acc']*100:.2f}% (p {format_perm_pvalue(orig['clean_best_classifier']['perm_pvalue'], no)}) | "
+        f"Best Reg R2={orig['clean_best_regressor']['real_r2']:+.4f} (p {format_perm_pvalue(orig['clean_best_regressor']['perm_pvalue'], no)})"
+    )
+    print(
+        f"  Constant-time decrypt_it  : timing r={ct['clean_correlations']['dec_timing_us']['pearson_r']:+.4f}, "
+        f"rho={ct['clean_correlations']['dec_timing_us']['spearman_rho']:+.4f} | "
+        f"Best Clf={ct['clean_best_classifier']['real_acc']*100:.2f}% (p {format_perm_pvalue(ct['clean_best_classifier']['perm_pvalue'], nc)}) | "
+        f"Best Reg R2={ct['clean_best_regressor']['real_r2']:+.4f} [all <0] (p {format_perm_pvalue(ct['clean_best_regressor']['perm_pvalue'], nc)})"
+    )
+    print(
+        f"  [tracemalloc 2-feat] Orig : rho={orig['tm2_correlations']['tm_dec_timing_us']['spearman_rho']:+.4f}, "
+        f"Clf={orig['tm2_best_classifier']['real_acc']*100:.2f}% (p {format_perm_pvalue(orig['tm2_best_classifier']['perm_pvalue'], no)}) | "
+        f"CT: rho={ct['tm2_correlations']['tm_dec_timing_us']['spearman_rho']:+.4f}, "
+        f"Clf={ct['tm2_best_classifier']['real_acc']*100:.2f}% (p {format_perm_pvalue(ct['tm2_best_classifier']['perm_pvalue'], nc)})"
+    )
     print("=" * 88)
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Attack C-5 hypothesis verification, profiling, and constant-time evaluation.")
+    parser.add_argument("--refresh-part-a", action="store_true", help="Re-run only Part (a) microbenchmark & refresh hypothesis JSON/summary using existing Part (b)/(c) and 5,000-trial JSONs.")
+    args = parser.parse_args()
+
     os.makedirs("results", exist_ok=True)
     if not os.path.exists(ORIG_RESULTS_PATH):
         raise FileNotFoundError(
             f"{ORIG_RESULTS_PATH} missing. Run attack_c_decrypt_5000.py first."
         )
+
+    if args.refresh_part_a:
+        if not os.path.exists(HYP_RESULTS_PATH) or not os.path.exists(CT_RESULTS_PATH):
+            raise FileNotFoundError("Existing hypothesis and CT JSON files are required for --refresh-part-a.")
+        with open(HYP_RESULTS_PATH, "r") as f:
+            hyp_results = json.load(f)
+        with open(ORIG_RESULTS_PATH, "r") as f:
+            orig_res = json.load(f)
+        with open(CT_RESULTS_PATH, "r") as f:
+            ct_res = json.load(f)
+
+        hyp_results["environment"] = to_native(get_environment_metadata())
+        hyp_results["part_a_microbenchmark"] = to_native(run_part_a_microbenchmark())
+        hyp_results["part_c_constant_time"]["before_vs_after"] = to_native(_extract_comparison(orig_res, ct_res))
+        hyp_results = to_native(hyp_results)
+
+        with open(HYP_RESULTS_PATH, "w") as f:
+            json.dump(hyp_results, f, indent=2)
+        generate_hypothesis_summary_markdown(HYP_RESULTS_PATH, HYP_SUMMARY_PATH)
+        print_hypothesis_report(hyp_results)
+        print(f"Refreshed: {HYP_RESULTS_PATH}, {HYP_SUMMARY_PATH}")
+        return
 
     part_a = run_part_a_microbenchmark()
     part_b = run_part_b_profile_and_dis()
@@ -765,6 +946,7 @@ def main():
         orig_res = json.load(f)
 
     hyp_results = to_native({
+        "environment": get_environment_metadata(),
         "part_a_microbenchmark": part_a,
         "part_b_profile_dis": part_b,
         "part_c_constant_time": {

@@ -1,4 +1,18 @@
 {
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "os": "Darwin / macOS 26.6.2",
+    "os_system": "Darwin",
+    "os_release": "26.6.2",
+    "machine": "arm64",
+    "cpu_model": "Apple Silicon (arm64; exact marketing model not recorded at run time)",
+    "cpu_cores_logical": 8,
+    "cpu_cores_physical": 8,
+    "python_version": "3.13.1",
+    "python_implementation": "CPython",
+    "numpy_version": "2.2.6",
+    "provenance_note": "Backfilled from results/reproducibility.json recorded on the original macOS arm64 host."
+  },
   "combined_ml_signals_timing_us": {
     "pearson_r": 0.08034517943890361,
     "pearson_p": 0.07265704847037208,
@@ -82,7 +96,11 @@
     },
     "permutation_test": {
       "score": 0.5280162566433398,
-      "pvalue": 0.8855721393034826
+      "pvalue": 0.8855721393034826,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.8856"
     }
   },
   "combined_ml_models_Random Forest": {
@@ -120,7 +138,11 @@
     },
     "permutation_test": {
       "score": 0.5100521847870524,
-      "pvalue": 0.417910447761194
+      "pvalue": 0.417910447761194,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.4179"
     }
   },
   "combined_ml_models_SVM (RBF)": {
@@ -158,7 +180,11 @@
     },
     "permutation_test": {
       "score": 0.5360123127239497,
-      "pvalue": 0.6417910447761194
+      "pvalue": 0.6417910447761194,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.6418"
     }
   },
   "combined_ml_models_Neural Network (MLP)": {
@@ -196,7 +222,11 @@
     },
     "permutation_test": {
       "score": 0.5079479595026813,
-      "pvalue": 0.9154228855721394
+      "pvalue": 0.9154228855721394,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.9154"
     }
   },
   "progressive_ml_Secret weight (binary)_LR": {
@@ -234,7 +264,11 @@
     },
     "permutation_test": {
       "score": 0.5230020439601278,
-      "pvalue": 0.9651741293532339
+      "pvalue": 0.9651741293532339,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.9652"
     }
   },
   "progressive_ml_Secret weight (binary)_RF": {
@@ -272,7 +306,11 @@
     },
     "permutation_test": {
       "score": 0.514020008031984,
-      "pvalue": 0.2835820895522388
+      "pvalue": 0.2835820895522388,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.2836"
     }
   },
   "progressive_ml_Secret sum (binary)_LR": {
@@ -310,7 +348,11 @@
     },
     "permutation_test": {
       "score": 0.5750031468594342,
-      "pvalue": 0.4925373134328358
+      "pvalue": 0.4925373134328358,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.4925"
     }
   },
   "progressive_ml_Secret sum (binary)_RF": {
@@ -348,7 +390,11 @@
     },
     "permutation_test": {
       "score": 0.49200697703691715,
-      "pvalue": 0.8955223880597015
+      "pvalue": 0.8955223880597015,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.8955"
     }
   },
   "progressive_ml_Secret weight (multi-class)_LR": {
@@ -386,7 +432,11 @@
     },
     "permutation_test": {
       "score": 0.46099392805979633,
-      "pvalue": 0.2885572139303483
+      "pvalue": 0.2885572139303483,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.2886"
     }
   },
   "progressive_ml_Secret weight (multi-class)_RF": {
@@ -424,7 +474,11 @@
     },
     "permutation_test": {
       "score": 0.3579897262531993,
-      "pvalue": 0.7263681592039801
+      "pvalue": 0.7263681592039801,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.7264"
     }
   },
   "progressive_ml_s[0][0] sign (positive vs not)_LR": {
@@ -462,7 +516,11 @@
     },
     "permutation_test": {
       "score": 0.6569983156809505,
-      "pvalue": 0.7562189054726368
+      "pvalue": 0.7562189054726368,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.7562"
     }
   },
   "progressive_ml_s[0][0] sign (positive vs not)_RF": {
@@ -500,7 +558,11 @@
     },
     "permutation_test": {
       "score": 0.5740051428674183,
-      "pvalue": 0.40298507462686567
+      "pvalue": 0.40298507462686567,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.4030"
     }
   },
   "progressive_ml_s[0][0] exact value_LR": {
@@ -538,7 +600,11 @@
     },
     "permutation_test": {
       "score": 0.3240006473539408,
-      "pvalue": 0.8059701492537313
+      "pvalue": 0.8059701492537313,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.8060"
     }
   },
   "progressive_ml_s[0][0] exact value_RF": {
@@ -576,7 +642,11 @@
     },
     "permutation_test": {
       "score": 0.3369896842950735,
-      "pvalue": 0.43283582089552236
+      "pvalue": 0.43283582089552236,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.4328"
     }
   },
   "clean_ml_Logistic Regression": {
@@ -614,7 +684,11 @@
     },
     "permutation_test": {
       "score": 0.5566666666666668,
-      "pvalue": 0.7412935323383084
+      "pvalue": 0.7412935323383084,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.7413"
     }
   },
   "clean_ml_Random Forest": {
@@ -652,7 +726,11 @@
     },
     "permutation_test": {
       "score": 0.4633333333333334,
-      "pvalue": 0.8905472636815921
+      "pvalue": 0.8905472636815921,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.8905"
     }
   },
   "clean_ml_SVM (RBF)": {
@@ -690,7 +768,11 @@
     },
     "permutation_test": {
       "score": 0.52,
-      "pvalue": 0.9651741293532339
+      "pvalue": 0.9651741293532339,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.9652"
     }
   },
   "clean_ml_Neural Network (MLP)": {
@@ -728,7 +810,11 @@
     },
     "permutation_test": {
       "score": 0.5233333333333333,
-      "pvalue": 0.9751243781094527
+      "pvalue": 0.9751243781094527,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.9751"
     }
   },
   "leaky_ml_Logistic Regression": {
@@ -766,7 +852,11 @@
     },
     "permutation_test": {
       "score": 1.0,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "leaky_ml_Random Forest": {
@@ -804,7 +894,11 @@
     },
     "permutation_test": {
       "score": 1.0,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "leaky_ml_SVM (RBF)": {
@@ -842,7 +936,11 @@
     },
     "permutation_test": {
       "score": 1.0,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "leaky_ml_Neural Network (MLP)": {
@@ -880,7 +978,11 @@
     },
     "permutation_test": {
       "score": 1.0,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "system_comp_Standard ML-KEM-512 (fixed params)_LR": {
@@ -918,7 +1020,11 @@
     },
     "permutation_test": {
       "score": 0.4766666666666666,
-      "pvalue": 0.8258706467661692
+      "pvalue": 0.8258706467661692,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.8259"
     }
   },
   "system_comp_Standard ML-KEM-512 (fixed params)_RF": {
@@ -956,7 +1062,11 @@
     },
     "permutation_test": {
       "score": 0.5233333333333333,
-      "pvalue": 0.30845771144278605
+      "pvalue": 0.30845771144278605,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.3085"
     }
   },
   "system_comp_QEQSKE-clean_LR": {
@@ -994,7 +1104,11 @@
     },
     "permutation_test": {
       "score": 0.5566666666666668,
-      "pvalue": 0.7611940298507462
+      "pvalue": 0.7611940298507462,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.7612"
     }
   },
   "system_comp_QEQSKE-clean_RF": {
@@ -1032,7 +1146,11 @@
     },
     "permutation_test": {
       "score": 0.5066666666666667,
-      "pvalue": 0.5572139303482587
+      "pvalue": 0.5572139303482587,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.5572"
     }
   },
   "system_comp_QEQSKE-leaky (positive control)_LR": {
@@ -1070,7 +1188,11 @@
     },
     "permutation_test": {
       "score": 1.0,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "system_comp_QEQSKE-leaky (positive control)_RF": {
@@ -1108,7 +1230,11 @@
     },
     "permutation_test": {
       "score": 1.0,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "decrypt_sidechannel_timing_us": {
@@ -1194,7 +1320,11 @@
     },
     "permutation_test": {
       "score": 0.8219464685087656,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "decrypt_sidechannel_ml_Random Forest": {
@@ -1232,7 +1362,11 @@
     },
     "permutation_test": {
       "score": 0.78595820407378,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "decrypt_sidechannel_ml_SVM (RBF)": {
@@ -1270,7 +1404,11 @@
     },
     "permutation_test": {
       "score": 0.8059543563475459,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "sc_correlation_enc_timing_us": {
@@ -1702,7 +1840,11 @@
     },
     "permutation_test": {
       "score": 0.5240482889642402,
-      "pvalue": 0.9701492537313433
+      "pvalue": 0.9701492537313433,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.9701"
     }
   },
   "decrypt_sidechannel_ml_Neural Net (MLP)": {
@@ -1740,7 +1882,11 @@
     },
     "permutation_test": {
       "score": 0.8180025491186301,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "sc_ml_Tier 1a: Sender Only_Random Forest": {
@@ -1778,7 +1924,11 @@
     },
     "permutation_test": {
       "score": 0.5099439674867133,
-      "pvalue": 0.48756218905472637
+      "pvalue": 0.48756218905472637,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.4876"
     }
   },
   "sc_ml_Tier 1a: Sender Only_SVM (RBF)": {
@@ -1816,7 +1966,11 @@
     },
     "permutation_test": {
       "score": 0.526044296948272,
-      "pvalue": 0.945273631840796
+      "pvalue": 0.945273631840796,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.9453"
     }
   },
   "sc_ml_Tier 1a: Sender Only_MLP": {
@@ -1854,7 +2008,11 @@
     },
     "permutation_test": {
       "score": 0.5240122165307938,
-      "pvalue": 0.5572139303482587
+      "pvalue": 0.5572139303482587,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.5572"
     }
   },
   "sc_ml_Tier 1a: Sender Only_Gradient Boost": {
@@ -1892,7 +2050,11 @@
     },
     "permutation_test": {
       "score": 0.5319722001779573,
-      "pvalue": 0.27860696517412936
+      "pvalue": 0.27860696517412936,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.2786"
     }
   },
   "sc_ml_Tier 1b: Receiver Only_Logistic Reg": {
@@ -1930,7 +2092,11 @@
     },
     "permutation_test": {
       "score": 0.5579924488372653,
-      "pvalue": 0.13930348258706468
+      "pvalue": 0.13930348258706468,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.1393"
     }
   },
   "sc_ml_Tier 1b: Receiver Only_Random Forest": {
@@ -1968,7 +2134,11 @@
     },
     "permutation_test": {
       "score": 0.8018781713681071,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "sc_ml_Tier 1b: Receiver Only_SVM (RBF)": {
@@ -2006,7 +2176,11 @@
     },
     "permutation_test": {
       "score": 0.6277685592670083,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "sc_ml_Tier 1b: Receiver Only_MLP": {
@@ -2044,7 +2218,11 @@
     },
     "permutation_test": {
       "score": 0.7779140514152418,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "sc_ml_Tier 1b: Receiver Only_Gradient Boost": {
@@ -2082,7 +2260,11 @@
     },
     "permutation_test": {
       "score": 0.8058822114806531,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "sc_ml_Tier 1c: Channel Only_Logistic Reg": {
@@ -2120,7 +2302,11 @@
     },
     "permutation_test": {
       "score": 0.48995983935742976,
-      "pvalue": 0.9253731343283582
+      "pvalue": 0.9253731343283582,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.9254"
     }
   },
   "sc_ml_Tier 1c: Channel Only_Random Forest": {
@@ -2158,7 +2344,11 @@
     },
     "permutation_test": {
       "score": 0.47186350191183896,
-      "pvalue": 0.9701492537313433
+      "pvalue": 0.9701492537313433,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.9701"
     }
   },
   "sc_ml_Tier 1c: Channel Only_SVM (RBF)": {
@@ -2196,7 +2386,11 @@
     },
     "permutation_test": {
       "score": 0.48191568669889134,
-      "pvalue": 0.9900497512437811
+      "pvalue": 0.9900497512437811,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.9900"
     }
   },
   "sc_ml_Tier 1c: Channel Only_MLP": {
@@ -2234,7 +2428,11 @@
     },
     "permutation_test": {
       "score": 0.4658273813818146,
-      "pvalue": 0.9552238805970149
+      "pvalue": 0.9552238805970149,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.9552"
     }
   },
   "sc_ml_Tier 1c: Channel Only_Gradient Boost": {
@@ -2272,7 +2470,11 @@
     },
     "permutation_test": {
       "score": 0.5039318952456533,
-      "pvalue": 0.6119402985074627
+      "pvalue": 0.6119402985074627,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.6119"
     }
   },
   "sc_ml_Tier 2: Sender + Receiver_Logistic Reg": {
@@ -2310,7 +2512,11 @@
     },
     "permutation_test": {
       "score": 0.527932087631965,
-      "pvalue": 0.7860696517412935
+      "pvalue": 0.7860696517412935,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.7861"
     }
   },
   "sc_ml_Tier 2: Sender + Receiver_Random Forest": {
@@ -2348,7 +2554,11 @@
     },
     "permutation_test": {
       "score": 0.819878315657841,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "sc_ml_Tier 2: Sender + Receiver_SVM (RBF)": {
@@ -2386,7 +2596,11 @@
     },
     "permutation_test": {
       "score": 0.5700045691749033,
-      "pvalue": 0.029850746268656716
+      "pvalue": 0.029850746268656716,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.0299"
     }
   },
   "sc_ml_Tier 2: Sender + Receiver_MLP": {
@@ -2424,7 +2638,11 @@
     },
     "permutation_test": {
       "score": 0.761933963398504,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "sc_ml_Tier 2: Sender + Receiver_Gradient Boost": {
@@ -2462,7 +2680,11 @@
     },
     "permutation_test": {
       "score": 0.8198422432243945,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "sc_ml_Tier 3: ALL (Sender + Receiver + Channel)_Logistic Reg": {
@@ -2500,7 +2722,11 @@
     },
     "permutation_test": {
       "score": 0.5218598946684944,
-      "pvalue": 0.5124378109452736
+      "pvalue": 0.5124378109452736,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.5124"
     }
   },
   "sc_ml_Tier 3: ALL (Sender + Receiver + Channel)_Random Forest": {
@@ -2538,7 +2764,11 @@
     },
     "permutation_test": {
       "score": 0.7859101074958517,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
   },
   "sc_ml_Tier 3: ALL (Sender + Receiver + Channel)_SVM (RBF)": {
@@ -2576,7 +2806,11 @@
     },
     "permutation_test": {
       "score": 0.5039318952456533,
-      "pvalue": 0.8656716417910447
+      "pvalue": 0.8656716417910447,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.8657"
     }
   },
   "sc_ml_Tier 3: ALL (Sender + Receiver + Channel)_MLP": {
@@ -2614,7 +2848,11 @@
     },
     "permutation_test": {
       "score": 0.5397878940913354,
-      "pvalue": 0.07960199004975124
+      "pvalue": 0.07960199004975124,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.0796"
     }
   },
   "sc_ml_Tier 3: ALL (Sender + Receiver + Channel)_Gradient Boost": {
@@ -2652,7 +2890,474 @@
     },
     "permutation_test": {
       "score": 0.8138902917057451,
-      "pvalue": 0.004975124378109453
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
     }
+  },
+  "last_updated_environment": {
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+    "os": "Linux 7.0.0-31-generic",
+    "os_system": "Linux",
+    "os_release": "7.0.0-31-generic",
+    "machine": "x86_64",
+    "cpu_model": "12th Gen Intel(R) Core(TM) i9-12900K",
+    "cpu_cores_logical": 24,
+    "cpu_cores_physical": 16,
+    "python_version": "3.12.3",
+    "python_implementation": "CPython",
+    "numpy_version": "2.5.2"
+  },
+  "extended_clean_baseline_full8d_best": {
+    "best_model": "Neural Network (MLP)",
+    "accuracy": {
+      "mean": 0.5748000000000001,
+      "sd": 0.0522255704045598,
+      "ci95": [
+        0.5599576571145534,
+        0.5896423428854468
+      ]
+    },
+    "balanced_accuracy": {
+      "mean": 0.555502886002886,
+      "sd": 0.05229131541271858,
+      "ci95": [
+        0.540641858592856,
+        0.570363913412916
+      ]
+    },
+    "roc_auc": {
+      "mean": 0.5873509379509378,
+      "sd": 0.05417908383776341,
+      "ci95": [
+        0.571953412690606,
+        0.6027484632112697
+      ]
+    },
+    "f1": {
+      "mean": 0.4388558644072026,
+      "sd": 0.07696436664390968,
+      "ci95": [
+        0.416982833421783,
+        0.4607288953926222
+      ]
+    },
+    "permutation_test": {
+      "score": 0.5919366087102902,
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
+    },
+    "delta_vs_baseline": 0.02080000000000004
+  },
+  "extended_clean_baseline_dec4d_best": {
+    "best_model": "Logistic Regression",
+    "accuracy": {
+      "mean": 0.5434,
+      "sd": 0.019960164409776462,
+      "ci95": [
+        0.5377273840395638,
+        0.5490726159604362
+      ]
+    },
+    "balanced_accuracy": {
+      "mean": 0.4940104617604617,
+      "sd": 0.01708973178510442,
+      "ci95": [
+        0.48915361372586963,
+        0.4988673097950538
+      ]
+    },
+    "roc_auc": {
+      "mean": 0.5263847041847043,
+      "sd": 0.05542360143094691,
+      "ci95": [
+        0.5106334909377805,
+        0.542135917431628
+      ]
+    },
+    "f1": {
+      "mean": 0.06288511915863344,
+      "sd": 0.05875479396401111,
+      "ci95": [
+        0.046187191468762,
+        0.0795830468485049
+      ]
+    },
+    "permutation_test": {
+      "score": 0.5399682562585671,
+      "pvalue": 0.945273631840796,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.9453"
+    },
+    "delta_vs_baseline": -0.010600000000000054
+  },
+  "extended_leaky_keygen_full8d_best": {
+    "best_model": "Logistic Regression",
+    "accuracy": {
+      "mean": 1.0,
+      "sd": 0.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "balanced_accuracy": {
+      "mean": 1.0,
+      "sd": 0.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "roc_auc": {
+      "mean": 1.0,
+      "sd": 0.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "f1": {
+      "mean": 1.0,
+      "sd": 0.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "permutation_test": {
+      "score": 1.0,
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
+    },
+    "delta_vs_baseline": 0.44599999999999995
+  },
+  "extended_leaky_decrypt_50us_full8d_best": {
+    "best_model": "Random Forest",
+    "accuracy": {
+      "mean": 0.9980000000000001,
+      "sd": 0.004040610178208847,
+      "ci95": [
+        0.9968516712930691,
+        0.9991483287069312
+      ]
+    },
+    "balanced_accuracy": {
+      "mean": 0.9981883116883117,
+      "sd": 0.0036602806666339604,
+      "ci95": [
+        0.9971480714326225,
+        0.9992285519440008
+      ]
+    },
+    "roc_auc": {
+      "mean": 0.997934126984127,
+      "sd": 0.0043214482309451305,
+      "ci95": [
+        0.9967059849857048,
+        0.9991622689825491
+      ]
+    },
+    "f1": {
+      "mean": 0.9977923200395111,
+      "sd": 0.0044604102762345246,
+      "ci95": [
+        0.9965246854647845,
+        0.9990599546142378
+      ]
+    },
+    "permutation_test": {
+      "score": 0.9980039920159681,
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
+    },
+    "delta_vs_baseline": 0.44400000000000006
+  },
+  "extended_natural_original_decrypt_full8d_best": {
+    "best_model": "Neural Network (MLP)",
+    "accuracy": {
+      "mean": 0.6242,
+      "sd": 0.04422068958932124,
+      "ci95": [
+        0.6116326190708621,
+        0.6367673809291379
+      ]
+    },
+    "balanced_accuracy": {
+      "mean": 0.6195155122655123,
+      "sd": 0.04421249781696926,
+      "ci95": [
+        0.6069504594123177,
+        0.6320805651187068
+      ]
+    },
+    "roc_auc": {
+      "mean": 0.6665468975468976,
+      "sd": 0.048090487998589206,
+      "ci95": [
+        0.6528797320784434,
+        0.6802140630153517
+      ]
+    },
+    "f1": {
+      "mean": 0.576539162878236,
+      "sd": 0.05234104088513097,
+      "ci95": [
+        0.5616640036453083,
+        0.5914143221111637
+      ]
+    },
+    "permutation_test": {
+      "score": 0.5918885121323618,
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
+    },
+    "delta_vs_baseline": 0.07019999999999993
+  },
+  "extended_graded_0us_full8d_best": {
+    "delay_us": 0.0,
+    "measured_delta_us": -0.13100000000000023,
+    "best_model": "Neural Network (MLP)",
+    "accuracy": {
+      "mean": 0.5756,
+      "sd": 0.049699505191968765,
+      "ci95": [
+        0.5614755569047488,
+        0.5897244430952512
+      ]
+    },
+    "balanced_accuracy": {
+      "mean": 0.5580075757575758,
+      "sd": 0.05009875974610188,
+      "ci95": [
+        0.5437696657734975,
+        0.572245485741654
+      ]
+    },
+    "roc_auc": {
+      "mean": 0.5945637806637807,
+      "sd": 0.050884641611173204,
+      "ci95": [
+        0.5801025255248581,
+        0.6090250358027033
+      ]
+    },
+    "f1": {
+      "mean": 0.4501735433707356,
+      "sd": 0.07501010385571828,
+      "ci95": [
+        0.42885590772453236,
+        0.4714911790169389
+      ]
+    },
+    "permutation_test": {
+      "score": 0.5659404083399466,
+      "pvalue": 0.03980099502487562,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": false,
+      "pvalue_display": "0.0398"
+    },
+    "delta_vs_baseline": 0.021599999999999953
+  },
+  "extended_graded_0p5us_full8d_best": {
+    "delay_us": 0.5,
+    "measured_delta_us": 0.6430000000000007,
+    "best_model": "Random Forest",
+    "accuracy": {
+      "mean": 0.6162,
+      "sd": 0.03697158313061093,
+      "ci95": [
+        0.6056927923315814,
+        0.6267072076684186
+      ]
+    },
+    "balanced_accuracy": {
+      "mean": 0.6100580808080809,
+      "sd": 0.037775693126162274,
+      "ci95": [
+        0.599322347607454,
+        0.6207938140087078
+      ]
+    },
+    "roc_auc": {
+      "mean": 0.6422940656565658,
+      "sd": 0.040156421614104584,
+      "ci95": [
+        0.6308817369058765,
+        0.6537063944072551
+      ]
+    },
+    "f1": {
+      "mean": 0.5605968282097417,
+      "sd": 0.051026863437556615,
+      "ci95": [
+        0.546095154074978,
+        0.5750985023445053
+      ]
+    },
+    "permutation_test": {
+      "score": 0.6338888488084073,
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
+    },
+    "delta_vs_baseline": 0.06219999999999992
+  },
+  "extended_graded_1us_full8d_best": {
+    "delay_us": 1.0,
+    "measured_delta_us": 1.176000000000002,
+    "best_model": "Gradient Boosting",
+    "accuracy": {
+      "mean": 0.6986,
+      "sd": 0.04535618671658131,
+      "ci95": [
+        0.6857099143578704,
+        0.7114900856421296
+      ]
+    },
+    "balanced_accuracy": {
+      "mean": 0.699744227994228,
+      "sd": 0.04522586744574376,
+      "ci95": [
+        0.6868911786790809,
+        0.712597277309375
+      ]
+    },
+    "roc_auc": {
+      "mean": 0.7527044552669554,
+      "sd": 0.04322069785664425,
+      "ci95": [
+        0.740421268843766,
+        0.7649876416901448
+      ]
+    },
+    "f1": {
+      "mean": 0.6774525127920228,
+      "sd": 0.048835932044298834,
+      "ci95": [
+        0.6635734944698299,
+        0.6913315311142156
+      ]
+    },
+    "permutation_test": {
+      "score": 0.6680133708486641,
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
+    },
+    "delta_vs_baseline": 0.14459999999999995
+  },
+  "extended_graded_2us_full8d_best": {
+    "delay_us": 2.0,
+    "measured_delta_us": 2.174999999999997,
+    "best_model": "Neural Network (MLP)",
+    "accuracy": {
+      "mean": 0.8314,
+      "sd": 0.032325512764845715,
+      "ci95": [
+        0.8222131909199438,
+        0.8405868090800562
+      ]
+    },
+    "balanced_accuracy": {
+      "mean": 0.8310912698412699,
+      "sd": 0.03395404417339077,
+      "ci95": [
+        0.8214416372558292,
+        0.8407409024267106
+      ]
+    },
+    "roc_auc": {
+      "mean": 0.8957211399711399,
+      "sd": 0.026139604670779967,
+      "ci95": [
+        0.8882923465198027,
+        0.9031499334224771
+      ]
+    },
+    "f1": {
+      "mean": 0.8134059330480659,
+      "sd": 0.03931314161124145,
+      "ci95": [
+        0.8022332618224927,
+        0.824578604273639
+      ]
+    },
+    "permutation_test": {
+      "score": 0.8179063559627733,
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
+    },
+    "delta_vs_baseline": 0.2774
+  },
+  "extended_graded_5us_full8d_best": {
+    "delay_us": 5.0,
+    "measured_delta_us": 5.189999999999998,
+    "best_model": "Random Forest",
+    "accuracy": {
+      "mean": 0.932,
+      "sd": 0.026108095546424362,
+      "ci95": [
+        0.9245801613427241,
+        0.939419838657276
+      ]
+    },
+    "balanced_accuracy": {
+      "mean": 0.9335064935064935,
+      "sd": 0.026061843142370214,
+      "ci95": [
+        0.926099799637009,
+        0.9409131873759781
+      ]
+    },
+    "roc_auc": {
+      "mean": 0.9784409451659453,
+      "sd": 0.013154943517390348,
+      "ci95": [
+        0.974702351584079,
+        0.9821795387478115
+      ]
+    },
+    "f1": {
+      "mean": 0.9255211140813039,
+      "sd": 0.028706793330284468,
+      "ci95": [
+        0.9173627336854713,
+        0.9336794944771365
+      ]
+    },
+    "permutation_test": {
+      "score": 0.9379674386167425,
+      "pvalue": 0.004975124378109453,
+      "n_permutations": 200,
+      "pvalue_floor": 0.004975124378109453,
+      "at_floor": true,
+      "pvalue_display": "< 1/201 (0.0050)"
+    },
+    "delta_vs_baseline": 0.378
   }
 }

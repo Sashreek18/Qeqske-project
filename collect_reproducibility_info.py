@@ -6,6 +6,7 @@ import psutil
 import numpy
 import scipy
 import sklearn
+from env_metadata import get_environment_metadata
 try:
     import xgboost
     xgb_version = xgboost.__version__
@@ -13,7 +14,9 @@ except Exception:
     xgb_version = "Not Installed"
 
 def collect_info():
+    env = get_environment_metadata()
     info = {
+        "environment": env,
         "versions": {
             "python": platform.python_version(),
             "numpy": numpy.__version__,
@@ -24,6 +27,7 @@ def collect_info():
         "system": {
             "os": platform.platform(),
             "cpu_info": platform.processor(),
+            "cpu_model": env["cpu_model"],
             "cpu_cores": psutil.cpu_count(logical=False),
             "cpu_threads": psutil.cpu_count(logical=True),
             "ram_bytes": psutil.virtual_memory().total

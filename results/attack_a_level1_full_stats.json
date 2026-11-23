@@ -1,4 +1,18 @@
 {
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "os": "Darwin / macOS 26.6.2",
+    "os_system": "Darwin",
+    "os_release": "26.6.2",
+    "machine": "arm64",
+    "cpu_model": "Apple Silicon (arm64; exact marketing model not recorded at run time)",
+    "cpu_cores_logical": 8,
+    "cpu_cores_physical": 8,
+    "python_version": "3.13.1",
+    "python_implementation": "CPython",
+    "numpy_version": "2.2.6",
+    "provenance_note": "Backfilled from results/reproducibility.json recorded on the original macOS arm64 host."
+  },
   "Random Forest": {
     "accuracy": {
       "mean": 0.49929156885987985,

@@ -35,6 +35,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 
 import attack_c_stats
+from env_metadata import get_environment_metadata
 from qrng_handler import QRNGSource
 from qeqske_core import QEQSKERandom, key_gen
 
@@ -188,6 +189,7 @@ if __name__ == "__main__":
     os.makedirs("results", exist_ok=True)
     with open("results/attack_c_progressive_difficulty.json", "w") as f:
         json.dump({
+            "environment": get_environment_metadata(),
             "n_trials": len(rows),
             "seed": 42,
             "cv": "RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)",

@@ -6,6 +6,8 @@ import warnings
 from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.model_selection import permutation_test_score, cross_validate, StratifiedKFold
 
+from env_metadata import get_environment_metadata, perm_pvalue_metadata
+
 def update_json_results(filename, key, data):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     if os.path.exists(filename):
@@ -16,7 +18,16 @@ def update_json_results(filename, key, data):
                 results = {}
     else:
         results = {}
-    
+
+    env = get_environment_metadata()
+    if "environment" not in results:
+        results["environment"] = env
+    elif (
+        results["environment"].get("platform") != env["platform"]
+        or results["environment"].get("cpu_model") != env["cpu_model"]
+    ):
+        results["last_updated_environment"] = env
+
     if key not in results:
         results[key] = {}
     results[key].update(data)
@@ -86,7 +97,7 @@ def compute_ml_stats(model, X, y, cv, scoring=("accuracy", "balanced_accuracy", 
     score, perm_scores, pvalue = permutation_test_score(model, X, y, scoring="accuracy", cv=fast_cv, n_permutations=200, n_jobs=-1, random_state=42)
     res["permutation_test"] = {
         "score": float(score),
-        "pvalue": float(pvalue)
+        **perm_pvalue_metadata(pvalue, n_permutations=200),
     }
     
     return res

@@ -28,6 +28,7 @@ import random
 
 import numpy as np
 
+from env_metadata import get_environment_metadata
 from nn_from_scratch import MODELS
 
 SEED = 42
@@ -192,7 +193,8 @@ def main():
 
     os.makedirs("results", exist_ok=True)
     with open("results/attack_a_sequence.json", "w") as f:
-        json.dump({"config": vars(args), "real_task": real,
+        json.dump({"environment": get_environment_metadata(),
+                   "config": vars(args), "real_task": real,
                    "positive_control": ctrl,
                    "pipeline_validated": bool(validated)}, f, indent=2)
     print("  [saved] results/attack_a_sequence.json")

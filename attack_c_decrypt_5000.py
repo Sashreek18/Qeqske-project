@@ -27,6 +27,7 @@ Saves:
   - results/decrypt_leak_5000_summary.md
 """
 
+import argparse
 import gc
 import json
 import math
@@ -69,6 +70,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC, SVR
 
+from env_metadata import format_perm_pvalue, get_environment_metadata, perm_pvalue_metadata
 from qeqske_core import QEQSKERandom, decrypt_it, encrypt_it, key_gen, secret_weight
 from qrng_handler import MersenneSource, QRNGSource
 
@@ -556,11 +558,10 @@ def run_classification_suite(
         models_out[name]["permutation_test"] = {
             "scoring": "accuracy",
             "cv_folds": 3,
-            "n_permutations": N_PERMUTATIONS,
             "score": float(score),
             "perm_mean": float(np.mean(perm_scores)),
             "perm_std": float(np.std(perm_scores, ddof=1)),
-            "pvalue": float(pval),
+            **perm_pvalue_metadata(pval, N_PERMUTATIONS),
         }
 
     return models_out
@@ -609,6 +610,7 @@ def run_regression_suite(
             "gap_real_minus_shuffled_r2": float(
                 real_res["r2"]["mean"] - shuf_res["r2"]["mean"]
             ),
+            "negative_r2_caveat": bool(real_res["r2"]["mean"] <= 0.0),
         }
 
     if perm_all:
@@ -631,11 +633,10 @@ def run_regression_suite(
         models_out[name]["permutation_test"] = {
             "scoring": "r2",
             "cv_folds": 3,
-            "n_permutations": N_PERMUTATIONS,
             "score": float(score),
             "perm_mean": float(np.mean(perm_scores)),
             "perm_std": float(np.std(perm_scores, ddof=1)),
-            "pvalue": float(pval),
+            **perm_pvalue_metadata(pval, N_PERMUTATIONS),
         }
 
     return models_out
@@ -645,10 +646,17 @@ def run_regression_suite(
 # Summary Markdown Generator (reads exclusively from saved JSON)
 # ---------------------------------------------------------------------------
 
+def _fmt_perm_p(pt_dict, default_n=N_PERMUTATIONS):
+    if not pt_dict:
+        return "N/A"
+    return format_perm_pvalue(pt_dict["pvalue"], pt_dict.get("n_permutations", default_n))
+
+
 def generate_summary_markdown(json_path, md_path):
     with open(json_path, "r") as f:
         data = json.load(f)
 
+    env = data.get("environment")
     meta = data["experiment"]
     qrng = data["qrng_stream"]
     target = data["targets"]
@@ -660,6 +668,13 @@ def generate_summary_markdown(json_path, md_path):
         f"# `{meta.get('decrypt_label', 'decrypt_it()')}` Side-Channel Leakage Evaluation (5,000 Trials)",
         "",
         "## 1. Experiment Setup & Data Integrity",
+    ]
+    if env:
+        lines.append(
+            f"- **Environment:** `{env.get('os')}` (`{env.get('platform')}`), "
+            f"CPU `{env.get('cpu_model')}`, Python `{env.get('python_version')}`, NumPy `{env.get('numpy_version')}`"
+        )
+    lines.extend([
         f"- **Trials:** {meta['n_trials']} (fixed plaintext `{meta['fixed_plaintext']}`, parameters `n={meta['n']}`, `k={meta['k']}`, fresh key per trial, seed `{meta['seed']}`)",
         f"- **Decryption correctness:** Clean pass `{clean['decryption_correct_count']}/{meta['n_trials']}` ({clean['decryption_correct_rate']*100:.2f}%); `tracemalloc` pass `{tm2['decryption_correct_count']}/{meta['n_trials']}` ({tm2['decryption_correct_rate']*100:.2f}%)",
         f"- **QRNG stream:** `{qrng['source_file']}` (`{qrng['dataset_size']:,}` numbers, `cycle={qrng['cycle_enabled']}`, consumed `{qrng['total_consumed']:,}` draws across `{qrng['wraps']}` wraps; `{qrng['unique_q_secret_pairs']:,}` unique `(q, s)` pairs)",
@@ -671,7 +686,7 @@ def generate_summary_markdown(json_path, md_path):
         "### Correlations vs. `secret_weight` (2,000-Resample Paired Bootstrap 95% CIs)",
         "| Signal | Mean ± Std (µs) | Median (IQR) µs | Pearson r (95% Boot CI) | Pearson p | Spearman ρ (95% Boot CI) | Spearman p |",
         "| :--- | :---: | :---: | :---: | :---: | :---: | :---: |",
-    ]
+    ])
 
     for feat in ["dec_timing_us", "dec_cpu_user_us"]:
         desc = clean["descriptives"][feat]
@@ -687,6 +702,7 @@ def generate_summary_markdown(json_path, md_path):
 
     q_chk = clean["confound_q"]
     d_chk = clean["drift_check"]
+    n_perm = meta.get("n_permutations", N_PERMUTATIONS)
     lines.extend([
         "",
         "### Confound & Time-Drift Checks (Clean Pass)",
@@ -705,36 +721,60 @@ def generate_summary_markdown(json_path, md_path):
         r_auc = m_res["real"]["roc_auc"]
         s_acc = m_res["shuffled_control"]["accuracy"]
         q_acc = m_res["q_residualized"]["accuracy"]
-        p_val = m_res["permutation_test"]["pvalue"]
+        p_str = _fmt_perm_p(m_res.get("permutation_test"), n_perm)
         lines.append(
             f"| {m_name} | {r_acc['mean']*100:.2f}% ± {r_acc['sd']*100:.2f}% | "
             f"{r_auc['mean']:.4f} | "
             f"{s_acc['mean']*100:.2f}% ± {s_acc['sd']*100:.2f}% | "
             f"{m_res['gap_real_minus_shuffled']*100:+.2f}% | "
             f"{q_acc['mean']*100:.2f}% ± {q_acc['sd']*100:.2f}% | "
-            f"{p_val:.4f} |"
+            f"{p_str} |"
         )
 
     lines.extend([
         "",
+        f"> *Permutation p-value note:* With `N = {n_perm}` permutations, zero shuffled scores exceeding the observed score hits the Phipson–Smyth resolution floor `1/(N+1)` and is reported as `< 1/{n_perm + 1} ({1.0/(n_perm + 1):.4f})`.",
+        "",
         "### Regression Target: Exact `secret_weight` (5×10 Repeated K-Fold CV)",
-        "| Model | Real R² (Mean ± SD) | Real RMSE | Shuffled R² | q-Residualized R² | Perm p-value |",
-        "| :--- | :---: | :---: | :---: | :---: | :---: |",
+        "| Model | Real R² (Mean ± SD) | Real RMSE | Shuffled R² | q-Residualized R² | Perm p-value | Caveat |",
+        "| :--- | :---: | :---: | :---: | :---: | :---: | :--- |",
     ])
 
+    neg_reg_models = []
+    pos_reg_models = []
     for m_name, m_res in clean["regression"].items():
         r_r2 = m_res["real"]["r2"]
         r_rmse = m_res["real"]["rmse"]
         s_r2 = m_res["shuffled_control"]["r2"]
         q_r2 = m_res["q_residualized"]["r2"]
-        p_val = m_res["permutation_test"]["pvalue"]
+        p_str = _fmt_perm_p(m_res.get("permutation_test"), n_perm)
+        is_neg = r_r2["mean"] <= 0.0
+        if is_neg:
+            neg_reg_models.append((m_name, r_r2["mean"]))
+            caveat = "Negative R² (worse than mean baseline)"
+        else:
+            pos_reg_models.append((m_name, r_r2["mean"]))
+            caveat = "—"
         lines.append(
             f"| {m_name} | {r_r2['mean']:+.4f} ± {r_r2['sd']:.4f} | "
             f"{r_rmse['mean']:.4f} | "
             f"{s_r2['mean']:+.4f} ± {s_r2['sd']:.4f} | "
             f"{q_r2['mean']:+.4f} ± {q_r2['sd']:.4f} | "
-            f"{p_val:.4f} |"
+            f"{p_str} | {caveat} |"
         )
+
+    if len(neg_reg_models) == len(clean["regression"]):
+        lines.extend([
+            "",
+            f"> *Regression caveat:* All 5 models yield negative out-of-fold `R²` (RMSE ≥ sample SD `{target['secret_weight_std']:.4f}`), performing worse than predicting the constant sample mean (`R² = 0`). There is **no regression signal**.",
+        ])
+    elif neg_reg_models:
+        neg_list = ", ".join(f"{m} ({v:+.4f})" for m, v in neg_reg_models)
+        best_pos = max(pos_reg_models, key=lambda x: x[1])
+        lines.extend([
+            "",
+            f"> *Regression caveat:* Negative-`R²` models ({neg_list}) perform worse than predicting the constant sample mean (`R² = 0`, `RMSE = {target['secret_weight_std']:.4f}`): unpruned trees overfit two noisy timing features (`shuffled R² = {clean['regression'][neg_reg_models[0][0]]['shuffled_control']['r2']['mean']:+.4f}`), so their permutation `p` reflects beating an even worse shuffled fit rather than useful continuous prediction. Report the positive-`R²` models instead (best: {best_pos[0]} `R² = {best_pos[1]:+.4f}`).",
+        ])
 
     lines.extend([
         "",
@@ -759,6 +799,11 @@ def generate_summary_markdown(json_path, md_path):
     best_tm2_reg = max(tm2["regression"], key=lambda k: tm2["regression"][k]["real"]["r2"]["mean"])
     best_tm4_reg = max(tm4["regression"], key=lambda k: tm4["regression"][k]["real"]["r2"]["mean"])
 
+    tm2_reg_r2 = tm2["regression"][best_tm2_reg]["real"]["r2"]["mean"]
+    tm4_reg_r2 = tm4["regression"][best_tm4_reg]["real"]["r2"]["mean"]
+    tm2_reg_note = " *(all models R² < 0; no predictive skill)*" if tm2_reg_r2 <= 0.0 else ""
+    tm4_reg_note = " *(all models R² < 0; no predictive skill)*" if tm4_reg_r2 <= 0.0 else ""
+
     lines.extend([
         "",
         "### ML Summary under `tracemalloc`",
@@ -766,22 +811,22 @@ def generate_summary_markdown(json_path, md_path):
         f"Real Acc `{tm2['classification'][best_tm2_cls]['real']['accuracy']['mean']*100:.2f}%`, "
         f"Shuffled `{tm2['classification'][best_tm2_cls]['shuffled_control']['accuracy']['mean']*100:.2f}%`, "
         f"q-Residualized `{tm2['classification'][best_tm2_cls]['q_residualized']['accuracy']['mean']*100:.2f}%`, "
-        f"Perm `p = {tm2['classification'][best_tm2_cls]['permutation_test']['pvalue']:.4f}`",
+        f"Perm `p {_fmt_perm_p(tm2['classification'][best_tm2_cls].get('permutation_test'), n_perm)}`",
         f"- **2-feature Best Regressor ({best_tm2_reg}):** "
-        f"Real R² `{tm2['regression'][best_tm2_reg]['real']['r2']['mean']:+.4f}`, "
+        f"Real R² `{tm2_reg_r2:+.4f}`, "
         f"Shuffled R² `{tm2['regression'][best_tm2_reg]['shuffled_control']['r2']['mean']:+.4f}`, "
         f"q-Residualized R² `{tm2['regression'][best_tm2_reg]['q_residualized']['r2']['mean']:+.4f}`, "
-        f"Perm `p = {tm2['regression'][best_tm2_reg]['permutation_test']['pvalue']:.4f}`",
+        f"Perm `p {_fmt_perm_p(tm2['regression'][best_tm2_reg].get('permutation_test'), n_perm)}`{tm2_reg_note}",
         f"- **4-feature (+ `dec_ram_peak_bytes`, `dec_num_allocations`) Best Classifier ({best_tm4_cls}):** "
         f"Real Acc `{tm4['classification'][best_tm4_cls]['real']['accuracy']['mean']*100:.2f}%`, "
         f"Shuffled `{tm4['classification'][best_tm4_cls]['shuffled_control']['accuracy']['mean']*100:.2f}%`, "
         f"q-Residualized `{tm4['classification'][best_tm4_cls]['q_residualized']['accuracy']['mean']*100:.2f}%`, "
-        f"Perm `p = {tm4['classification'][best_tm4_cls]['permutation_test']['pvalue']:.4f}`",
+        f"Perm `p {_fmt_perm_p(tm4['classification'][best_tm4_cls].get('permutation_test'), n_perm)}`",
         f"- **4-feature Best Regressor ({best_tm4_reg}):** "
-        f"Real R² `{tm4['regression'][best_tm4_reg]['real']['r2']['mean']:+.4f}`, "
+        f"Real R² `{tm4_reg_r2:+.4f}`, "
         f"Shuffled R² `{tm4['regression'][best_tm4_reg]['shuffled_control']['r2']['mean']:+.4f}`, "
         f"q-Residualized R² `{tm4['regression'][best_tm4_reg]['q_residualized']['r2']['mean']:+.4f}`, "
-        f"Perm `p = {tm4['regression'][best_tm4_reg]['permutation_test']['pvalue']:.4f}`",
+        f"Perm `p {_fmt_perm_p(tm4['regression'][best_tm4_reg].get('permutation_test'), n_perm)}`{tm4_reg_note}",
     ])
 
     with open(md_path, "w") as f:
@@ -887,6 +932,7 @@ def analyze_pass(
 
 
 def print_report(results):
+    env = results.get("environment")
     exp = results["experiment"]
     qrng = results["qrng_stream"]
     tgt = results["targets"]
@@ -897,6 +943,8 @@ def print_report(results):
     print("=" * 88)
     print(f"SIDE-CHANNEL EVALUATION: {exp.get('decrypt_label', 'decrypt_it')} (5,000 TRIALS)")
     print("=" * 88)
+    if env:
+        print(f"Environment: {env.get('os')} ({env.get('platform')}) | CPU: {env.get('cpu_model')} | Python {env.get('python_version')} | NumPy {env.get('numpy_version')}")
     print(f"Trials: {exp['n_trials']} | Plaintext: {exp['fixed_plaintext']!r} | Params: n={exp['n']}, k={exp['k']} | Seed: {exp['seed']}")
     print(f"QRNG: {qrng['source_file']} (size={qrng['dataset_size']:,}, consumed={qrng['total_consumed']:,}, wraps={qrng['wraps']}, unique_(q,s)={qrng['unique_q_secret_pairs']:,})")
     print(f"Decryption correctness: clean={clean['decryption_correct_count']}/{exp['n_trials']} ({clean['decryption_correct_rate']*100:.2f}%), tracemalloc={tm2['decryption_correct_count']}/{exp['n_trials']} ({tm2['decryption_correct_rate']*100:.2f}%)")
@@ -923,37 +971,39 @@ def print_report(results):
     print(f"  order vs dec_timing_us   : Pearson r={dc['exec_order_vs_dec_timing_us']['pearson_r']:+.4f} (p={dc['exec_order_vs_dec_timing_us']['pearson_p']:.4f}), Spearman rho={dc['exec_order_vs_dec_timing_us']['spearman_rho']:+.4f} (p={dc['exec_order_vs_dec_timing_us']['spearman_p']:.4f})")
     print(f"  order vs dec_cpu_user_us : Pearson r={dc['exec_order_vs_dec_cpu_user_us']['pearson_r']:+.4f} (p={dc['exec_order_vs_dec_cpu_user_us']['pearson_p']:.4f}), Spearman rho={dc['exec_order_vs_dec_cpu_user_us']['spearman_rho']:+.4f} (p={dc['exec_order_vs_dec_cpu_user_us']['spearman_p']:.4f})")
 
+    n_perm = exp.get("n_permutations", N_PERMUTATIONS)
     print(f"\n--- 3. CLEAN CLASSIFICATION (5x10 Stratified CV; Baseline={tgt['majority_baseline']*100:.2f}%) ---")
-    print(f"{'Model':<20} {'Real Acc':>14} {'ROC-AUC':>8} {'Shuffled':>14} {'Net Gap':>9} {'q-Resid Acc':>14} {'Perm p':>8}")
+    print(f"{'Model':<20} {'Real Acc':>14} {'ROC-AUC':>8} {'Shuffled':>14} {'Net Gap':>9} {'q-Resid Acc':>14} {'Perm p':>18}")
     for m_name, m in clean["classification"].items():
         ra = m["real"]["accuracy"]
         auc = m["real"]["roc_auc"]
         sa = m["shuffled_control"]["accuracy"]
         qa = m["q_residualized"]["accuracy"]
-        pv = m["permutation_test"]["pvalue"]
+        pv_str = _fmt_perm_p(m.get("permutation_test"), n_perm)
         print(
             f"{m_name:<20} {ra['mean']*100:6.2f}±{ra['sd']*100:4.2f}% "
             f"{auc['mean']:8.4f} "
             f"{sa['mean']*100:6.2f}±{sa['sd']*100:4.2f}% "
             f"{m['gap_real_minus_shuffled']*100:+8.2f}% "
             f"{qa['mean']*100:6.2f}±{qa['sd']*100:4.2f}% "
-            f"{pv:8.4f}"
+            f"{pv_str:>18}"
         )
 
     print("\n--- 4. CLEAN REGRESSION TARGET: EXACT secret_weight (5x10 Repeated K-Fold CV) ---")
-    print(f"{'Model':<20} {'Real R^2':>16} {'RMSE':>8} {'Shuffled R^2':>16} {'q-Resid R^2':>16} {'Perm p':>8}")
+    print(f"{'Model':<20} {'Real R^2':>16} {'RMSE':>8} {'Shuffled R^2':>16} {'q-Resid R^2':>16} {'Perm p':>18} {'Note':>12}")
     for m_name, m in clean["regression"].items():
         rr = m["real"]["r2"]
         rm = m["real"]["rmse"]
         sr = m["shuffled_control"]["r2"]
         qr = m["q_residualized"]["r2"]
-        pv = m["permutation_test"]["pvalue"]
+        pv_str = _fmt_perm_p(m.get("permutation_test"), n_perm)
+        note = "NEG_R2 (<0)" if rr["mean"] <= 0.0 else "OK"
         print(
             f"{m_name:<20} {rr['mean']:+7.4f}±{rr['sd']:6.4f} "
             f"{rm['mean']:8.4f} "
             f"{sr['mean']:+7.4f}±{sr['sd']:6.4f} "
             f"{qr['mean']:+7.4f}±{qr['sd']:6.4f} "
-            f"{pv:8.4f}"
+            f"{pv_str:>18} {note:>12}"
         )
 
     print("\n--- 5. LEGACY TRACEMALLOC-WRAPPED COMPARISON (OBSERVER EFFECT CHECK) ---")
@@ -968,18 +1018,20 @@ def print_report(results):
         )
     print("  [tracemalloc 2-feat (timing, cpu) Classification & Regression]")
     for m_name, m in tm2["classification"].items():
-        pt = f", perm_p={m['permutation_test']['pvalue']:.4f}" if "permutation_test" in m else ""
+        pt = f", perm_p={_fmt_perm_p(m.get('permutation_test'), n_perm)}" if "permutation_test" in m else ""
         print(f"    CLF {m_name:<19}: real={m['real']['accuracy']['mean']*100:.2f}%, shuf={m['shuffled_control']['accuracy']['mean']*100:.2f}%, q-res={m['q_residualized']['accuracy']['mean']*100:.2f}%{pt}")
     for m_name, m in tm2["regression"].items():
-        pt = f", perm_p={m['permutation_test']['pvalue']:.4f}" if "permutation_test" in m else ""
-        print(f"    REG {m_name:<19}: real_R2={m['real']['r2']['mean']:+.4f}, shuf_R2={m['shuffled_control']['r2']['mean']:+.4f}, q-res_R2={m['q_residualized']['r2']['mean']:+.4f}{pt}")
+        pt = f", perm_p={_fmt_perm_p(m.get('permutation_test'), n_perm)}" if "permutation_test" in m else ""
+        flag = " [NEG_R2]" if m["real"]["r2"]["mean"] <= 0.0 else ""
+        print(f"    REG {m_name:<19}: real_R2={m['real']['r2']['mean']:+.4f}, shuf_R2={m['shuffled_control']['r2']['mean']:+.4f}, q-res_R2={m['q_residualized']['r2']['mean']:+.4f}{pt}{flag}")
     print("  [tracemalloc 4-feat (+ram, allocs) Best Models]")
     b4c = max(tm4["classification"], key=lambda k: tm4["classification"][k]["real"]["accuracy"]["mean"])
     b4r = max(tm4["regression"], key=lambda k: tm4["regression"][k]["real"]["r2"]["mean"])
     m4c = tm4["classification"][b4c]
     m4r = tm4["regression"][b4r]
-    print(f"    Best CLF ({b4c}): real={m4c['real']['accuracy']['mean']*100:.2f}%, shuf={m4c['shuffled_control']['accuracy']['mean']*100:.2f}%, q-res={m4c['q_residualized']['accuracy']['mean']*100:.2f}%, perm_p={m4c['permutation_test']['pvalue']:.4f}")
-    print(f"    Best REG ({b4r}): real_R2={m4r['real']['r2']['mean']:+.4f}, shuf_R2={m4r['shuffled_control']['r2']['mean']:+.4f}, q-res_R2={m4r['q_residualized']['r2']['mean']:+.4f}, perm_p={m4r['permutation_test']['pvalue']:.4f}")
+    print(f"    Best CLF ({b4c}): real={m4c['real']['accuracy']['mean']*100:.2f}%, shuf={m4c['shuffled_control']['accuracy']['mean']*100:.2f}%, q-res={m4c['q_residualized']['accuracy']['mean']*100:.2f}%, perm_p={_fmt_perm_p(m4c.get('permutation_test'), n_perm)}")
+    r4_flag = " [all R^2 < 0]" if m4r["real"]["r2"]["mean"] <= 0.0 else ""
+    print(f"    Best REG ({b4r}): real_R2={m4r['real']['r2']['mean']:+.4f}, shuf_R2={m4r['shuffled_control']['r2']['mean']:+.4f}, q-res_R2={m4r['q_residualized']['r2']['mean']:+.4f}, perm_p={_fmt_perm_p(m4r.get('permutation_test'), n_perm)}{r4_flag}")
     print("=" * 88)
 
 
@@ -1007,8 +1059,10 @@ def run_decrypt_leak_pipeline(
         del trials
         gc.collect()
 
+    env_meta = get_environment_metadata()
+
     with open(traces_path, "w") as f:
-        json.dump(to_native(records), f, indent=2)
+        json.dump({"environment": env_meta, "records": to_native(records)}, f, indent=2)
 
     weights = np.array([r["secret_weight"] for r in records], dtype=float)
     median_w = float(np.median(weights))
@@ -1073,6 +1127,7 @@ def run_decrypt_leak_pipeline(
     total_wall_s = time.perf_counter() - t_all_0
 
     full_results = {
+        "environment": env_meta,
         "experiment": {
             "decrypt_label": label,
             "decrypt_function": getattr(decrypt_fn, "__name__", str(decrypt_fn)),
@@ -1131,8 +1186,100 @@ def run_decrypt_leak_pipeline(
     return sanitized
 
 
+def compare_results_files(path_a, path_b):
+    """Print side-by-side comparison of two decrypt_leak_5000 JSON files (e.g. two hosts or variants)."""
+    with open(path_a, "r") as f:
+        a = json.load(f)
+    with open(path_b, "r") as f:
+        b = json.load(f)
+
+    def _summarize(d, path):
+        env = d.get("environment") or {}
+        clean = d["clean_uninstrumented"]
+        tm2 = d["tracemalloc_instrumented_2feat"]
+        best_clf = max(clean["classification"], key=lambda k: clean["classification"][k]["real"]["accuracy"]["mean"])
+        clf_m = clean["classification"][best_clf]
+        pos_regs = [
+            (k, v["real"]["r2"]["mean"])
+            for k, v in clean["regression"].items()
+            if v["real"]["r2"]["mean"] > 0.0
+        ]
+        if pos_regs:
+            best_reg, best_r2 = max(pos_regs, key=lambda x: x[1])
+            reg_str = f"{best_r2:+.4f} ({best_reg})"
+        else:
+            best_reg = max(clean["regression"], key=lambda k: clean["regression"][k]["real"]["r2"]["mean"])
+            reg_str = f"None (all R^2 < 0; max {clean['regression'][best_reg]['real']['r2']['mean']:+.4f})"
+        tm2_clf = max(tm2["classification"], key=lambda k: tm2["classification"][k]["real"]["accuracy"]["mean"])
+        n_perm = d["experiment"].get("n_permutations", N_PERMUTATIONS)
+        return {
+            "label": d["experiment"].get("decrypt_label", os.path.basename(path)),
+            "os": env.get("os", "unknown"),
+            "cpu": env.get("cpu_model", "unknown"),
+            "py_np": f"{env.get('python_version', '?')} / {env.get('numpy_version', '?')}",
+            "timing_mean": f"{clean['descriptives']['dec_timing_us']['mean']:.2f} ± {clean['descriptives']['dec_timing_us']['std']:.2f} us",
+            "timing_rho": f"{clean['correlations']['dec_timing_us']['spearman_rho']:+.4f}",
+            "timing_r": f"{clean['correlations']['dec_timing_us']['pearson_r']:+.4f}",
+            "cpu_rho": f"{clean['correlations']['dec_cpu_user_us']['spearman_rho']:+.4f}",
+            "best_clf": f"{clf_m['real']['accuracy']['mean']*100:.2f}% ({best_clf}, p {_fmt_perm_p(clf_m.get('permutation_test'), n_perm)})",
+            "best_reg": reg_str,
+            "tm_rho": f"{tm2['correlations']['tm_dec_timing_us']['spearman_rho']:+.4f}",
+            "tm_clf": f"{tm2['classification'][tm2_clf]['real']['accuracy']['mean']*100:.2f}% ({tm2_clf})",
+        }
+
+    sa = _summarize(a, path_a)
+    sb = _summarize(b, path_b)
+    rows = [
+        ("Label", sa["label"], sb["label"]),
+        ("OS", sa["os"], sb["os"]),
+        ("CPU Model", sa["cpu"], sb["cpu"]),
+        ("Python / NumPy", sa["py_np"], sb["py_np"]),
+        ("Clean Timing (mean±sd)", sa["timing_mean"], sb["timing_mean"]),
+        ("Clean Timing Spearman rho", sa["timing_rho"], sb["timing_rho"]),
+        ("Clean Timing Pearson r", sa["timing_r"], sb["timing_r"]),
+        ("Clean CPU Spearman rho", sa["cpu_rho"], sb["cpu_rho"]),
+        ("Clean Best Classifier", sa["best_clf"], sb["best_clf"]),
+        ("Clean Best Pos-R^2 Reg", sa["best_reg"], sb["best_reg"]),
+        ("tracemalloc Timing rho", sa["tm_rho"], sb["tm_rho"]),
+        ("tracemalloc Best Clf", sa["tm_clf"], sb["tm_clf"]),
+    ]
+    w0 = max(len(r[0]) for r in rows) + 2
+    w1 = max(len(r[1]) for r in rows + [("File", path_a, path_b)]) + 2
+    w2 = max(len(r[2]) for r in rows + [("File", path_a, path_b)]) + 2
+    print("=" * (w0 + w1 + w2 + 4))
+    print(f"{'Metric':<{w0}} | {path_a:<{w1}} | {path_b:<{w2}}")
+    print(f"{'-'*w0}-+-{'-'*w1}-+-{'-'*w2}")
+    for m, va, vb in rows:
+        print(f"{m:<{w0}} | {va:<{w1}} | {vb:<{w2}}")
+    print("=" * (w0 + w1 + w2 + 4))
+
+
 def main():
-    run_decrypt_leak_pipeline()
+    parser = argparse.ArgumentParser(description="5,000-trial decrypt_it side-channel leakage evaluation.")
+    parser.add_argument("--tag", type=str, default=None, help="Suffix tag for host-specific output files (e.g. macos_m1).")
+    parser.add_argument("--regenerate-summary", nargs=2, metavar=("JSON_PATH", "MD_PATH"), help="Regenerate markdown summary from an existing JSON file and exit.")
+    parser.add_argument("--compare", nargs=2, metavar=("JSON_A", "JSON_B"), help="Print a side-by-side comparison of two decrypt_leak_5000 JSON files and exit.")
+    args = parser.parse_args()
+
+    if args.regenerate_summary:
+        generate_summary_markdown(args.regenerate_summary[0], args.regenerate_summary[1])
+        print(f"Regenerated {args.regenerate_summary[1]} from {args.regenerate_summary[0]}")
+        return
+
+    if args.compare:
+        compare_results_files(args.compare[0], args.compare[1])
+        return
+
+    if args.tag:
+        tag = args.tag.strip().lstrip("_")
+        run_decrypt_leak_pipeline(
+            traces_path=f"results/decrypt_traces_5000_{tag}.json",
+            results_path=f"results/decrypt_leak_5000_{tag}.json",
+            summary_path=f"results/decrypt_leak_5000_{tag}_summary.md",
+            label=f"decrypt_it (original, {tag})",
+        )
+    else:
+        run_decrypt_leak_pipeline()
 
 
 if __name__ == "__main__":

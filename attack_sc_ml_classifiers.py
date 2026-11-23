@@ -41,6 +41,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 
 import attack_c_stats
+from env_metadata import get_environment_metadata
 from attack_sc_sender_receiver_traces import (
     simulate_key_exchange_with_traces,
     extract_secret_properties,
@@ -300,7 +301,8 @@ if __name__ == "__main__":
     if os.path.exists(traces_path):
         print(f"\n  Loading existing traces from {traces_path}...")
         with open(traces_path) as f:
-            rows = json.load(f)
+            raw = json.load(f)
+        rows = raw["records"] if isinstance(raw, dict) else raw
         print(f"  Loaded {len(rows)} trace records.")
     else:
         print(f"\n  No existing traces found — collecting fresh data...")
@@ -310,7 +312,7 @@ if __name__ == "__main__":
         # Save for reproducibility
         os.makedirs("results", exist_ok=True)
         with open(traces_path, "w") as f:
-            json.dump(rows, f, indent=2)
+            json.dump({"environment": get_environment_metadata(), "records": rows}, f, indent=2)
         print(f"  Saved traces to {traces_path}")
 
     # Step 2: Per-feature correlation analysis
