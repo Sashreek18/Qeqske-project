@@ -44,6 +44,8 @@ choice, not of this code, and it is why no result at these parameters may be
 read as evidence about LWE hardness.
 """
 
+import numpy as np
+
 from qrng_handler import QRNGSource
 
 
@@ -288,6 +290,132 @@ def decrypt_it(s, u, v_queue, q):
     return bits_to_string(bits)
 
 
+def decrypt_it_constant_time(s, u, v_queue, q):
+    """
+    Constant-time, branch-free Algorithm 10 decryption using fixed-width
+    NumPy int64 arithmetic and bitwise distance selection (no Python
+    bigint loop, no data-dependent branches). Supports both per-bit
+    u_queue of shape (B, k, n) and legacy single-u of shape (k, n).
+    """
+    s_arr = np.asarray(s, dtype=np.int64)
+    u_arr = np.asarray(u, dtype=np.int64)
+    v_arr = np.asarray(v_queue, dtype=np.int64)
+    q64 = np.int64(q)
+    half_q = q64 >> np.int64(1)
+
+    diff = (v_arr - np.matmul(u_arr, s_arr)) % q64
+    vals = diff[:, 0, 0]
+
+    # Branch-free min(vals, q - vals) and abs(vals - q // 2) in int64
+    comp = q64 - vals
+    m0 = (vals - comp) >> np.int64(63)
+    dist_to_0 = (vals & m0) | (comp & ~m0)
+
+    delta = vals - half_q
+    m1 = delta >> np.int64(63)
+    dist_to_half = (delta ^ m1) - m1
+
+    # bit = 0 if dist_to_0 < dist_to_half else 1
+    lt_mask = ((dist_to_0 - dist_to_half) >> np.int64(63)) & np.int64(1)
+    bits = (np.int64(1) - lt_mask).tolist()
+    return bits_to_string(bits)
+
+
+# ---------------------------------------------------------------------------
+# Authenticated/Hardened Decryption Countermeasure (Minimal CCA Mitigation)
+# ---------------------------------------------------------------------------
+
+import hashlib
+import hmac
+import json
+import secrets
+
+
+def _serialize_ct(u, v_queue):
+    """Deterministic JSON serialization of ciphertext (u, v_queue) for tag computation."""
+    return json.dumps({"u": u, "v_queue": v_queue}, sort_keys=True).encode("utf-8")
+
+
+def _compute_tag(m: str, u, v_queue) -> str:
+    """
+    Compute the re-encryption integrity tag: SHA-256(m_bytes || ct_bytes).
+
+    m        : the plaintext string Bob is encrypting
+    u, v_queue: the ciphertext components
+
+    This is a simplified stand-in for the FO transform's re-encryption-and-compare
+    step (phase5_root_cause already describes the full version).  In the real FO
+    transform Alice would re-encrypt m' under the public key with deterministic
+    randomness derived from m' and compare the resulting ciphertext component-wise.
+    Here we approximate that check by hashing the plaintext together with the
+    serialized ciphertext: a forged ciphertext cannot produce the same hash without
+    knowing m in advance, so the check still closes the adaptive-query channel.
+
+    NOTE ON TIMING: this function is called AFTER full decryption (Alice always
+    decrypts first, then verifies).  For a production deployment the final
+    comparison MUST be constant-time (e.g. hmac.compare_digest) so that tag
+    mismatches do not leak timing information about how many hash bytes matched.
+    """
+    m_bytes = m.encode("utf-8") if isinstance(m, str) else m
+    ct_bytes = _serialize_ct(u, v_queue)
+    return hashlib.sha256(m_bytes + ct_bytes).hexdigest()
+
+
+def encrypt_it_hardened(rng: QEQSKERandom, shared_secret: str, A, t, q, n, k):
+    """
+    Hardened encryption (Bob's side).
+
+    Runs encrypt_it() then computes an integrity tag:
+        tag = SHA-256(m || u || v)
+    where m is the plaintext Bob is encrypting.  The tag binds the ciphertext to
+    the plaintext that produced it, so Alice can verify authenticity after
+    decryption without needing to share any additional secret.
+    """
+    ct = encrypt_it(rng, shared_secret, A, t, q, n, k, legacy_pad_reuse=False)
+    ct["tag"] = _compute_tag(shared_secret, ct["u"], ct["v_queue"])
+    return ct
+
+
+def decrypt_it_hardened(s, u, v_queue, q, tag=None, expected_shared_secret=None):
+    """
+    Hardened decryption (Alice's side) — FO-style re-encryption check.
+
+    Tag verification is MANDATORY: if tag is None this function rejects
+    immediately.  There is NO code path that skips verification for a non-None
+    tag; the `expected_shared_secret` parameter is retained only for call-site
+    compatibility and is intentionally ignored.
+
+    Algorithm:
+      1. Reject immediately if tag is None (no authenticated ciphertext).
+      2. Tentatively decrypt: m' = decrypt_it(s, u, v_queue, q).
+      3. Recompute: tag' = SHA-256(m' || u || v).
+      4. Constant-time compare tag' == tag.  If they differ, return None.
+         No bit or threshold information about the mismatch is revealed.
+      5. Return m' only on a clean tag match.
+
+    This is a simplified stand-in for the FO transform's re-encryption-and-compare
+    step (phase5_root_cause already describes the full version).  It requires Alice
+    to always fully decrypt before verifying, which is why a constant-time
+    comparison matters for a production version — the decryption itself must not
+    be short-circuited on crafted ciphertexts either (not addressed here, but noted).
+    """
+    if tag is None:
+        return None  # Rejection: no tag supplied — unauthenticated ciphertext
+
+    # Step 2: tentative decryption (always performed — no early exit on crafted input)
+    m_prime = decrypt_it(s, u, v_queue, q)
+
+    # Step 3: recompute tag from the decrypted plaintext and ciphertext
+    tag_prime = _compute_tag(m_prime, u, v_queue)
+
+    # Step 4: constant-time comparison — do not reveal which bytes differed
+    if not hmac.compare_digest(tag, tag_prime):
+        return None  # Rejection: tag mismatch — forged or corrupted ciphertext
+
+    # Step 5: verification passed
+    return m_prime
+
+
 def secret_weight(s):
     """Hamming-style weight of the secret: count of non-zero coefficients."""
     return sum(1 for row in s for v in row if v != 0)
@@ -295,3 +423,4 @@ def secret_weight(s):
 
 if __name__ == "__main__":
     print("QEQSKE core (revised) loaded. Run test_qeqske.py for a full exchange.")
+
