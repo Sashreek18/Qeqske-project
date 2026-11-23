@@ -14,20 +14,23 @@ Empirical security evaluation of HCL Software's **QEQSKE** (*Quantum-Enabled Qua
 
 The empirical evidence across `results/` cleanly separates **receiver-side decapsulation (`decrypt_it`)** (a genuine, mechanistically verified CPython timing side-channel) from **public channel / randomness handling** (no ML leakage detected), and separates **uninstrumented execution** from **`tracemalloc` instrumentation artifacts**:
 
-> **Primary Finding (5,000-Trial Uninstrumented Evaluation, `results/decrypt_leak_5000_summary.md`):**
-> Under a clean, uninstrumented software timing threat model at toy parameters (`n=4, k=2`, `5,000` QRNG trials, seed `42`, `53.70%` majority baseline, Linux x86_64 Intel Core i9-12900K), unmodified `decrypt_it()` leaks `secret_weight` at **65.25% ± 1.49%** binary accuracy (`MLP`, ROC-AUC `0.7076`, shuffled control `53.46%`, `+11.79` percentage-point net gap, `q`-residualized `64.79%`, permutation `p < 1/201 (0.0050)`) and **R² = +0.2260** continuous exact-weight regression (`SVR (RBF)`, `p < 1/201 (0.0050)`), driven by Spearman `ρ = +0.4166` (`p = 3.36e-209`) between `dec_timing_us` (`75.21 ± 6.37 µs`) and `secret_weight`.
+> **Primary Finding (5,000-Trial Uninstrumented Evaluation, `results/decrypt_leak_5000_summary.md` & `results/decrypt_leak_5000_mac_arm64_summary.md`):**
+> Under a clean, uninstrumented software timing threat model at toy parameters (`n=4, k=2`, `5,000` QRNG trials, seed `42`, `53.70%` majority baseline), unmodified `decrypt_it()` leaks `secret_weight` across two architectures: on **Linux x86_64 (`i9-12900K`)**, binary accuracy reaches **65.25% ± 1.49%** (`MLP`, ROC-AUC `0.7076`, shuffled `53.46%`, `+11.79` pt net gap, `q`-residualized `64.79%`, permutation `p < 1/201 (0.0050)`), continuous regression reaches **R² = +0.2260** (`SVR (RBF)`, `p < 1/201 (0.0050)`), and `dec_timing_us` correlates with `secret_weight` at Spearman **`ρ = +0.4166`** (`p = 3.36e-209`). On **macOS arm64 (`Apple M2`)**, the same finding replicates at **63.65% ± 1.30%** (`Gradient Boosting`, `AUC 0.6798`, `q`-resid `63.29%`, `p < 1/201`), **R² = +0.1768** (`MLP`), and `ρ = +0.3418` timing / `+0.3706` CPU user-time.
+
+> **End-to-End Clean Sender ↔ Receiver & TCP Socket RTT (`results/stress_test_traces_5000_summary.md`):**
+> On `5,000` clean uninstrumented Alice ↔ Bob exchanges (`Apple M2`), **Sender (`encrypt_it`)** remains strictly at baseline (`53.68%`, `p = 0.3682`), **Receiver (`decrypt_it`)** leaks locally at **`65.29% ± 0.90%`** (`SVM (RBF)`, `p < 1/201`), and routing decryption over a **live localhost TCP socket (`127.0.0.1`)** attenuates that leak via socket/JSON jitter (`IQR 34.50 µs` vs. `3.08 µs` local) down to a faint **`55.67% ± 0.98%`** (`MLP`, `ρ = +0.0700`, `p < 1/201`), which disappears completely under `decrypt_it_constant_time` (`53.92%`, `ρ = -0.0033`, `p = 0.0995`). Meanwhile, **Public Channel (`u, v`)** summaries stay near baseline (**`55.59%`** vs. `53.70%` baseline, `p < 1/201`), revealing a minor (`+1.89` pt) toy-`n=4` effect driven chiefly by `119/5,000` (`2.38%`) keys with an all-zero column in `s`.
 
 > **Observer Effect (`tracemalloc` Amplifies the Leak):**
-> Wrapping `decrypt_it()` inside Python's `tracemalloc.start()/stop()` — as done in earlier 500-trial collectors (`results/stress_test_traces.json`, `attack_c_decrypt_sidechannel.py`) — slows decryption **`~11.7×`** (`75.21 µs → 882.02 µs`) and **artificially amplifies** the side-channel signal: Spearman `ρ` jumps from `+0.4166` to **`+0.8241`**, classification accuracy rises from `65.25%` to **`84.37%`** (2-feature timing+CPU) / **`84.42%`** (4-feature), and regression `R²` rises from `+0.2260` to **`+0.6877`** / **`+0.7051`**. The root cause is CPython's allocation hook intercepting every new `PyLongObject` produced by `x * (±1)` while skipping cached small-int `0` products (`x * 0`). Accordingly, all earlier 500-trial `~80–82%` figures are explicitly marked **Legacy (`tracemalloc`-wrapped)** below.
+> Wrapping `decrypt_it()` inside Python's `tracemalloc.start()/stop()` — as done in earlier 500-trial collectors (`results/stress_test_traces.json`, `attack_c_decrypt_sidechannel.py`) — slows decryption **`~11.7×`** (`75.21 µs → 882.02 µs`) and **artificially amplifies** the side-channel signal: Spearman `ρ` jumps from `+0.4166` to **`+0.8241`** (`+0.8302` on Apple M2), classification accuracy rises from `65.25%` to **`84.37%`** (`85.21%` on Apple M2), and regression `R²` rises from `+0.2260` to **`+0.6877`** (`+0.7247` on Apple M2). The root cause is CPython's allocation hook intercepting every new `PyLongObject` produced by `x * (±1)` while skipping cached small-int `0` products (`x * 0`). Accordingly, all earlier 500-trial `~80–82%` figures are explicitly marked **Legacy (`tracemalloc`-wrapped)** below.
 
 > **Constant-Time Mitigation (`decrypt_it_constant_time`, `results/decrypt_ct_leak_5000_summary.md`):**
 > Replacing pure-Python `mat_mult_mod` and conditional rounding branches with fixed-width vectorized NumPy `int64` arithmetic and bitwise selection eliminates the leak on the identical 5,000 QRNG trials: clean timing correlation drops to `ρ = -0.0258` (`p = 0.0677`), best classifier accuracy drops to **`53.56%`** (`p = 0.7065`, at `53.70%` majority baseline), and **all 5 regression models yield `R² < 0`** (no predictive skill).
 
-> **Negative Findings (No ML Leakage Detected):**
+> **Negative & Null Findings (No Exploitably Significant ML Leakage Detected):**
 > Across the same evaluation methodology (seed `42`, repeated CV, shuffled-label control, and `q`-confound checks):
 > 1. Raw ANU QRNG vs. Mersenne Twister (`attack_a_distinguisher.py`, `attack_a_sequence.py`, `results/attack_a_level1_full_stats.json` — `48.10–50.00%` accuracy).
-> 2. **Sender (`encrypt_it`)** execution traces (`Tier 1a`, legacy 500 trials: `53.68%` best vs. `55.40%` baseline and `53.86%` shuffled control).
-> 3. **Public Channel** ciphertext statistical summaries (`Tier 1c`, legacy 500 trials: `52.84%` best vs. `55.40%` baseline and `51.18%` shuffled control).
+> 2. **Sender (`encrypt_it`)** execution traces (`Tier 1a`, clean 5,000 trials: `53.68%` vs. `53.70%` baseline, `p = 0.3682`; legacy 500 trials: `53.68%` vs. `55.40%` baseline).
+> 3. **Public Channel** ciphertext statistical summaries (`Tier 1c`: legacy 500 trials `52.84%` vs. `55.40%` baseline; clean 5,000 trials `55.59%` vs. `53.70%` baseline — only `+1.89` pts above baseline due to `n=4` sparse/zero-column key artifacts).
 > 4. `key_gen()` under `tracemalloc` (`attack_c_combined_ml.py` and the 5-level `attack_c_progressive_difficulty.py` ladder — all targets at or below majority baseline). *(Note: when measured uninstrumented with CPU core pinning in the extended positive control, `key_gen()` exhibits a subtle `+0.53 µs` shift from its single `mat_mult_mod(A, s, q)` call, `58.52%` MLP vs. `55.40%` baseline.)*
 > 5. **Real ML-KEM-512 (`n=256, k=2, q=3329` via `kyber-py`) & QEQSKE Variant (per-key NTT `q`, QRNG-fed) Decapsulation (`attack_c_mlkem_decrypt_5000.py`):** Neither `secret_weight` nor individual coefficient sign `s[0][0]` leaks in clean `decaps`, isolated `_k_pke_decrypt`, or `tracemalloc` passes (all classifiers at majority baseline `51.05–52.24%` / `64.28–65.62%`, `p >= 0.1592`, all regression `R² < 0`). NTT transformation (`s_hat = NTT(s)`) eliminates coefficient-domain zero sparsity (`0.04–0.15 / 512` zeros in `s_hat` vs. `~160` zeros in `s`), extinguishing the CPython `*0` fast-path leak.
 
@@ -122,16 +125,61 @@ Evaluated on `5,000` fresh `(q, s, u, v_queue)` trials (`FIXED_PLAINTEXT = "HELL
    - Shifting `diff + 4*q64` before `% q64` forces every dividend `>= 0` and completely eliminates the `% q64` trend (`ρ = -0.0186, p = 0.335`). The remaining `~0.03 µs` comes from `np.asarray(s_py)` unpacking Python `int` `0` vs `±1`.
    - Across full `~40.0 µs` `decrypt_it_constant_time` calls (`IQR = 0.95 µs`, `SD = 2.56 µs`), this `~0.34 µs` extreme-weight micro-trend (and `<0.1 µs` across typical QRNG weights `4..7`) is buried beneath wrapper/OS jitter (`ρ = -0.0258, p = 0.0677`, `53.56%` accuracy); production deployments should nonetheless replace `%` / `idiv` with branch-free Barrett or Montgomery reduction.
 
-#### Cross-Platform Effect-Size Replication Status
-Every `results/*.json` file now records standardized `"environment"` metadata (`platform`, `os`, `cpu_model`, `python_version`, `numpy_version`). `attack_c_decrypt_5000.py` provides `--tag <host>` and `--compare <json_a> <json_b>` to measure how effect size varies across CPUs, OSes, and Python/NumPy builds. Machine 1 (`Linux 7.0.0-31-generic`, `12th Gen Intel(R) Core(TM) i9-12900K`, Python `3.12.3`, NumPy `2.5.2`) is complete above; Machine 2 (`attack_c_decrypt_5000.py --tag <host2>`) must be executed on a second physical machine (only one physical host is accessible in this environment).
+#### Cross-Platform Effect-Size Replication Status (`--compare`)
+Every `results/*.json` file records standardized `"environment"` metadata (`platform`, `os`, `cpu_model`, `python_version`, `numpy_version`). Both machines have now completed the identical 5,000-trial pipeline (`python3 attack_c_decrypt_5000.py --compare results/decrypt_leak_5000.json results/decrypt_leak_5000_mac_arm64.json`), confirming the leak replicates cleanly across architectures and Python builds:
+
+| Metric | Machine 1: `results/decrypt_leak_5000.json` | Machine 2: `results/decrypt_leak_5000_mac_arm64.json` |
+| :--- | :---: | :---: |
+| **OS / Architecture** | `Linux 7.0.0-31-generic` (`x86_64`) | `Darwin 27.0.0` (`macOS 27.0.1 arm64`) |
+| **CPU Model** | `12th Gen Intel(R) Core(TM) i9-12900K` | `Apple M2` |
+| **Python / NumPy** | `3.12.3` / `2.5.2` | `3.13.1` / `2.2.6` |
+| **Clean Timing (Mean ± SD)** | `75.21 ± 6.37 µs` | `76.79 ± 6.34 µs` |
+| **Clean Timing Spearman `ρ`** | `+0.4166` | `+0.3418` |
+| **Clean Timing Pearson `r`** | `+0.1727` | `+0.1370` |
+| **Clean CPU Spearman `ρ`** | `+0.4023` | `+0.3706` |
+| **Clean Best Classifier (5×10 CV)** | **65.25%** (`MLP`, `p < 1/201 (0.0050)`) | **63.65%** (`Gradient Boosting`, `p < 1/201 (0.0050)`) |
+| **Clean Best Pos-`R²` Regressor** | **`+0.2260`** (`SVR (RBF)`) | **`+0.1768`** (`MLP`) |
+| **`tracemalloc` Timing `ρ`** | `+0.8241` | `+0.8302` |
+| **`tracemalloc` Best Classifier** | `84.37%` (`Gradient Boosting`) | `85.21%` (`Logistic Regression`) |
 
 ---
 
-### 3.2 Legacy 500-Trial Sender ↔ Receiver Side-Channel Evaluation (`tracemalloc`-Wrapped, macOS arm64)
+### 3.2 Clean 5,000-Trial Sender ↔ Receiver & Localhost TCP Socket RTT Evaluation (Plus Legacy Comparison)
 
-> **Legacy Marker:** The 500-trial datasets in `results/sender_receiver_traces.json`, `results/stress_test_traces.json`, and `results/attack_c_full_stats.json` were collected on `macOS-26.6.2-arm64` (Python `3.13.1`, NumPy `2.2.6`) with `tracemalloc.start()` wrapping `decrypt_it()` and `encrypt_it()`. As proven in Section 3.1, **`tracemalloc` amplifies the receiver leak** (`65.25%` clean → `84.37%` `tracemalloc` at `n=5,000`), which explains why the legacy Tier 1b accuracy sits at `~80–82%`. The null findings on **Sender (`Tier 1a`)** and **Public Channel (`Tier 1c`)** remain unaffected.
+#### Primary Clean Uninstrumented 5,000-Trial Suite (`macOS arm64 Apple M2`, `results/stress_test_traces_5000_summary.md`)
 
-500 Alice ↔ Bob sessions (`FIXED_PLAINTEXT = "HELLO"`, `n=4, k=2`), binary target `secret_weight > 5.0` (`0=277`, `1=223`, **Majority Baseline = 55.40%**), `RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)`:
+5,000 clean uninstrumented Alice ↔ Bob exchanges (`FIXED_PLAINTEXT = "HELLO"`, `n=4, k=2`, unique `(q, s) = 5,000`, seed `42`, binary target `secret_weight > 5.0` -> `0=2,685, 1=2,315`, **Majority Baseline = 53.70%**), plus live localhost TCP socket RTT passes (`127.0.0.1`, `TCP_NODELAY=1`) serving both `decrypt_it` and `decrypt_it_constant_time`. Correctness: local decrypt `4997/5000` (`99.94%`), TCP original ACK `4997/5000` (`5000/5000` match), TCP constant-time ACK `4997/5000` (`5000/5000` match).
+
+**Signal Correlations vs. `secret_weight` (2,000-Resample Paired Bootstrap 95% CIs):**
+
+| Signal | Mean ± SD (µs) | Median (IQR) µs | Pearson `r` [95% CI] | Spearman `ρ` [95% CI] | Spearman `p` |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| `enc_timing_us` (Sender) | 348.69 ± 19.06 | 341.75 (9.42) | `+0.0034 [-0.0211, +0.0290]` | `-0.0006 [-0.0288, +0.0262]` | `9.64e-01` |
+| `enc_cpu_user_us` (Sender) | 345.68 ± 13.53 | 342.00 (5.00) | `+0.0094 [-0.0156, +0.0349]` | `-0.0065 [-0.0333, +0.0199]` | `6.48e-01` |
+| `dec_timing_us` (Receiver) | 75.02 ± 5.05 | 73.96 (3.08) | `+0.1804 [+0.1496, +0.2106]` | **`+0.3989 [+0.3754, +0.4244]`** | **`2.55e-190`** |
+| `dec_cpu_user_us` (Receiver) | 74.87 ± 3.93 | 74.00 (3.00) | `+0.2382 [+0.2088, +0.2691]` | **`+0.4113 [+0.3883, +0.4350]`** | **`1.89e-203`** |
+| `net_rtt_us` (TCP Orig) | 168.14 ± 25.04 | 155.83 (34.50) | `+0.0249 [-0.0039, +0.0534]` | **`+0.0700 [+0.0414, +0.0983]`** | **`7.17e-07`** |
+| `net_ct_rtt_us` (TCP CT) | 138.14 ± 24.33 | 134.37 (36.73) | `-0.0134 [-0.0401, +0.0176]` | `-0.0033 [-0.0303, +0.0262]` | `8.15e-01` |
+
+**Multi-Tier 5×10 Repeated Stratified CV Summary (In-Fold Leak-Free `QResidualizer`, Baseline = `53.70%`):**
+
+| Observational Tier | Active Feats | Best Model | Real Acc (Mean ± SD) | ROC-AUC | Shuffled Control | Net Gap | `q`-Resid | Perm `p`-value |
+| :--- | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Tier 1a: Sender Only (Clean)** | 2 | Logistic Reg | 53.68% ± 0.09% | 0.4900 | 53.69% | -0.01% | 53.68% | 0.3682 |
+| **Tier 1b: Receiver Only (Clean Local)** | 2 | **SVM (RBF)** | **65.29% ± 0.90%** | **0.7080** | 53.42% | **+11.87%** | **65.48%** | **< 1/201 (0.0050)** |
+| **Tier 1c: Public Channel Only** | 24 | SVM (RBF) | 55.59% ± 1.52% | 0.5717 | 53.09% | +2.50% | 55.31% | < 1/201 (0.0050) |
+| **Tier 1d: Network TCP RTT (Original `decrypt_it`)** | 2 | MLP | 55.67% ± 0.98% | 0.5683 | 53.56% | +2.11% | 55.21% | < 1/201 (0.0050) |
+| **Tier 1e: Network TCP RTT (Constant-Time)** | 2 | SVM (RBF) | 53.92% ± 0.65% | 0.5019 | 53.61% | +0.31% | 53.63% | 0.0995 |
+| **Tier 2: Sender + Receiver (Clean)** | 4 | **MLP** | **65.92% ± 1.08%** | **0.7134** | 52.70% | **+13.22%** | **65.72%** | **< 1/201 (0.0050)** |
+| **Tier 3: ALL Combined** | 30 | **Grad Boost** | **66.18% ± 1.01%** | **0.7277** | 51.70% | **+14.48%** | **66.32%** | **< 1/201 (0.0050)** |
+
+> **Nuances revealed at 5,000 trials:**
+> 1. **TCP RTT attenuation (`Tier 1d` vs. `Tier 1e`):** Localhost socket + JSON framing jitter (`IQR 34.50 µs` vs. `3.08 µs` local) attenuates `decrypt_it`'s leak from `65.29%` (`ρ = +0.3989`) to a faint but statistically real `55.67%` (`MLP`, `ρ = +0.0700`, `p < 1/201`; `Grad Boost 55.51%`, `AUC 0.5774`, `p < 1/201`). Serving `decrypt_it_constant_time` over the same TCP socket drops timing correlation to `ρ = -0.0033` (`p = 0.815`) and accuracy to baseline (`53.92%`, `p = 0.0995`).
+> 2. **Public Channel toy-`n=4` sparse-column signal (`Tier 1c`):** At `n=5,000` (unlike `n=500`), `Tier 1c` reaches `55.59%` (`+1.89` pts over baseline, `p < 1/201`), driven by `ct_entropy_approx` (`r = +0.1505, p = 1.03e-26`), `ct_coefficient_of_variation` (`r = -0.1340`), and `v_mean_over_q` (`r = +0.1190`). Inspection shows `119/5,000` (`2.38%`) keys at toy `n=4, k=2` have an all-zero column in `s` (all strictly `secret_weight <= 4`), collapsing `t[:, j] = e[:, j]` and lowering ciphertext entropy; removing those `119` degenerate keys eliminates `ct_coefficient_of_variation`, `v_mean_over_q`, `v_kurtosis`, and `v_skewness` (`p >= 0.070`), while `ct_entropy_approx` retains a small residual trend (`r = +0.1125`) from sparse low-dimension matrix structure.
+
+#### Legacy 500-Trial Comparison (`tracemalloc`-Wrapped, macOS arm64, `results/stress_test_traces.json`)
+
+> **Legacy Marker:** Earlier 500-trial datasets (`results/sender_receiver_traces.json`, `results/stress_test_traces.json`, `results/attack_c_full_stats.json`) wrapped `decrypt_it()` and `encrypt_it()` in `tracemalloc.start()`, artificially inflating `Tier 1b` to `~80–82%` (Section 3.1). Retained below for historical comparison (Majority Baseline = `55.40%`):
 
 | Observational Tier *(Legacy 500-Trial, `tracemalloc`-Wrapped)* | Active Features | Best Model (`stress_test_traces.json`) | Real CV Acc (Mean ± SD) | Shuffled Control | Net Gap (Real − Shuf) | `q`-Residualized Acc | Verdict |
 | :--- | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -181,7 +229,7 @@ Injecting a calibrated busy-wait delay whenever `secret_weight > 5.0` into `decr
 
 - **Empirical Detection Threshold:** Despite single-call timing jitter of `1.91 µs` IQR (`~40.7 µs` median), the pipeline already detects a **`0.5 µs` secret-dependent leak** with statistical significance (`p < 1/201 (0.0050)` on both Full 8D `61.62%` and Decrypt 4D `60.12%`), clears a `+10` percentage-point margin at **`1.0 µs`** (`69.86%`), and exceeds `80%` accuracy by **`2.0 µs`** (`83.14%` / `82.66%`).
 
-![Graded Leak Detection Threshold](results/graded_leak_threshold.png)
+![Graded Leak Detection Threshold](results/graded_leak_threshold.svg)
 
 ---
 
@@ -266,16 +314,16 @@ To test whether the toy `decrypt_it` weight leak survives at real post-quantum p
 | `attack_c_ram_sidechannel.py` | Attack C Part 2 — `tracemalloc` peak memory & allocation proxy on `key_gen()` and `encrypt_it()` (`results/attack_c_ram_cache.json`). |
 | `attack_c_cache_sidechannel.py` | Attack C Part 3 — `psutil` CPU user/system time cache/power proxy on `key_gen()` and `encrypt_it()` (`results/attack_c_ram_cache.json`). |
 | `attack_c_combined_ml.py` | Attack C Part 4 — combined 4D (`timing, cpu, ram, allocs`) ML classification on `key_gen()`. |
-| `attack_c_leaky_vs_clean.py` | Extended positive control & sensitivity threshold suite: full 8D (`key_gen` + `decrypt`) clean vs. leaky comparisons + graded `0.0–5.0 µs` delay sweep (`results/attack_c_leaky_vs_clean.json`, `results/graded_leak_threshold.png`). |
+| `attack_c_leaky_vs_clean.py` | Extended positive control & sensitivity threshold suite: full 8D (`key_gen` + `decrypt`) clean vs. leaky comparisons + graded `0.0–5.0 µs` delay sweep (`results/attack_c_leaky_vs_clean.json`, `results/graded_leak_threshold.svg`). |
 | `attack_c_progressive_difficulty.py` | Attack C — 5-level progressive difficulty ladder on `key_gen()` (`results/attack_c_progressive_difficulty.json`). |
 | `attack_c_stats.py` | Shared statistical helper (`compute_correlation_stats`, `compute_ml_stats`, `update_json_results`) writing `results/attack_c_full_stats.json`. |
 | `attack_c_decrypt_sidechannel.py` | Legacy 500-trial `decrypt_it()` profiling under `tracemalloc` (`results/attack_c_full_stats.json`). |
 | `attack_c_decrypt_5000.py` | Primary 5,000-trial `decrypt_it()` leakage harness (clean vs. `tracemalloc`, randomized order, warm-up, bootstrap CIs, classification + regression, `--tag` / `--compare` cross-host replication; `results/decrypt_leak_5000.json`). |
 | `attack_c_mlkem_decrypt_5000.py` | Real ML-KEM (`n=256, k=2/3, q=3329` via `kyber-py`) + configurable QEQSKE variant (`--variant`, per-key NTT `q`, QRNG) 5,000-trial decrypt evaluation targeting `secret_weight` and `s[0][0]` sign (`results/mlkem512*_decrypt_leak_5000.json`). |
 | `attack_c_decrypt_hypothesis.py` | Hypothesis test (`mat_mult_mod` weight 0..8 microbenchmark, NumPy residual-trend decomposition, `cProfile`/`dis`, and 5,000-trial `decrypt_it_constant_time` verification; `results/decrypt_hypothesis_ct.json`). |
-| `attack_sc_sender_receiver_traces.py` | Legacy Attack SC-1 — 500-trial Alice ↔ Bob `tracemalloc`-wrapped trace collector capturing 34 features (`results/sender_receiver_traces.json`). |
-| `attack_sc_ml_classifiers.py` | Legacy Attack SC-2 — 3-tier ML classifier evaluation (Sender, Receiver, Channel, Combined) across 5 model families (`results/attack_c_full_stats.json`). |
-| `stress_test_traces.py` | Confound regression (`q`), 50-fold CV spread, and shuffled-label controls on `results/sender_receiver_traces.json` (`results/stress_test_traces.json`). |
+| `attack_sc_sender_receiver_traces.py` | Clean 5,000-trial Alice ↔ Bob trace collector capturing uninstrumented Sender/Receiver timing & CPU, 26 Channel features, and live localhost TCP socket RTT for original & constant-time `decrypt_it` (`results/sender_receiver_traces_5000.json`). |
+| `attack_sc_ml_classifiers.py` | 3-tier ML classifier evaluation (Sender, Receiver, Channel, Combined) across 5 model families (`results/attack_c_full_stats.json`). |
+| `stress_test_traces.py` | Multi-tier stress test with bootstrap 95% CIs, execution-order drift checks, leak-free in-fold `QResidualizer`, 5×10 CV spread, shuffled-label control, and 200-permutation tests (`results/stress_test_traces_5000.json`, `results/stress_test_traces_5000_summary.md`). |
 | `system_comparison.py` | Compares QEQSKE-clean and QEQSKE-leaky against `kyber-py` `ML_KEM_512` under identical timing ML evaluation (`results/attack_c_full_stats.json`). |
 | `attack_d_cca_mismatch.py` | Appendix observation — active chosen-ciphertext binary-search recovery against unhardened `decrypt_it` (no Fujisaki–Okamoto check) and verification of `decrypt_it_hardened`. |
 | `attack_e_algebraic_lwe.py` | Route 2 algebraic attack — Gaussian elimination (`A^{-1} mod q`) + `3^n` noise enumeration recovering toy `n=4, k=2` secrets. |
@@ -309,8 +357,8 @@ python3 attack_c_decrypt_5000.py
 python3 attack_c_decrypt_hypothesis.py
 
 # Second-machine replication & cross-host effect-size comparison
-python3 attack_c_decrypt_5000.py --tag host2
-python3 attack_c_decrypt_5000.py --compare results/decrypt_leak_5000.json results/decrypt_leak_5000_host2.json
+python3 attack_c_decrypt_5000.py --tag mac_arm64
+python3 attack_c_decrypt_5000.py --compare results/decrypt_leak_5000.json results/decrypt_leak_5000_mac_arm64.json
 
 # Extended full-feature positive control & graded delay threshold (0.5–5.0 us)
 python3 attack_c_leaky_vs_clean.py
@@ -318,9 +366,8 @@ python3 attack_c_leaky_vs_clean.py
 # Real ML-KEM (n=256, k=2 or 3) standard vs. QEQSKE-variant 5,000-trial evaluation
 python3 attack_c_mlkem_decrypt_5000.py --variant both --k 2 --n-trials 5000
 
-# Legacy 500-trial Sender <-> Receiver trace collection, ML tiers, and stress tests
+# Clean 5,000-trial Sender <-> Receiver + Localhost TCP RTT trace collection & stress test
 python3 attack_sc_sender_receiver_traces.py
-python3 attack_sc_ml_classifiers.py
 python3 stress_test_traces.py
 ```
 
@@ -336,11 +383,12 @@ python3 stress_test_traces.py
 | Attack A (Levels 1–3 & Sequence RQ4) | Complete | ~50% distinguisher accuracy (`results/attack_a_level1_full_stats.json`) |
 | Attack B (Autoencoder Entropy) | Complete | No structure detected (error ratio ~1.0) |
 | Attack C (`key_gen` Time / RAM / CPU / Ladder) | Complete (Legacy) | No leakage above baseline under `tracemalloc` (`results/attack_c_progressive_difficulty.json`, `results/attack_c_ram_cache.json`) |
-| **Attack C Extended Positive Control & Sensitivity Threshold** | **Complete** | **Full 8D + Decrypt 4D; 100% on leaky controls, `0.5 µs` statistically significant threshold (`p < 1/201`), `83.14%` at `2 µs` (`results/attack_c_leaky_vs_clean.json`, `results/graded_leak_threshold.png`)** |
-| **500-Trial Sender / Channel / Receiver ML & Stress Test** | **Complete (Legacy — `tracemalloc`-Wrapped)** | **Receiver `80.42–82.18%` reflects `tracemalloc` amplification; Sender & Channel at baseline (`results/stress_test_traces.json`)** |
+| **Attack C Extended Positive Control & Sensitivity Threshold** | **Complete** | **Full 8D + Decrypt 4D; 100% on leaky controls, `0.5 µs` statistically significant threshold (`p < 1/201`), `83.14%` at `2 µs` (`results/attack_c_leaky_vs_clean.json`, `results/graded_leak_threshold.svg`)** |
+| **5,000-Trial Clean Sender / Channel / Receiver + TCP RTT Suite** | **Complete** | **Clean Receiver `65.29%` (`SVM`, `p < 1/201`), Sender at baseline (`53.68%`), TCP Orig `55.67%` vs. TCP CT `53.92%`, Public Channel `55.59%` (`n=4` zero-col artifact) (`results/stress_test_traces_5000_summary.md`)** |
+| **Legacy 500-Trial Sender / Channel / Receiver (`tracemalloc`)** | **Complete (Legacy)** | **Receiver `80.42–82.18%` reflects `tracemalloc` amplification; retained for comparison (`results/stress_test_traces.json`)** |
 | **Attack C-5 5,000-Trial Clean vs. `tracemalloc` Evaluation** | **Complete** | **Clean `65.25%` (`ρ = +0.4166`, `R² = +0.2260`) vs. `tracemalloc` `84.37%` (`ρ = +0.8241`, `R² = +0.6877`) (`results/decrypt_leak_5000_summary.md`)** |
 | **Root-Cause Microbenchmark & Constant-Time Verification** | **Complete** | **CPython `*0` vs `*±1` isolated; NumPy residual trend explained via signed `% q64`; `decrypt_it_constant_time` drops to `53.56%` (`p = 0.7065`, all `R² < 0`) (`results/decrypt_ct_leak_5000_summary.md`, `results/decrypt_hypothesis_ct_summary.md`)** |
-| Cross-Machine 5,000-Trial Replication (`attack_c_decrypt_5000.py`) | Pending Second Machine | Machine 1 (Linux x86_64 Intel i9-12900K) complete; `--tag` / `--compare` CLI ready for Machine 2 run |
+| **Cross-Machine 5,000-Trial Replication (`attack_c_decrypt_5000.py`)** | **Complete** | **Machine 1 (Linux x86_64 Intel i9-12900K `65.25%`, `R² +0.2260`) replicated on Machine 2 (macOS arm64 Apple M2 `63.65%`, `R² +0.1768`, `p < 1/201`) (`results/decrypt_leak_5000_mac_arm64_summary.md`)** |
 | Attack C Real Hardware Power/Cache Traces | Pending HCL Access | Requires physical oscilloscope / hardware PMU counters |
 | Attack D (Fault Injection) | Out of Scope (Ignored) | Excluded per project scope; `attack_d_cca_mismatch.py` retained as appendix CCA note |
 | **Scale to `n=256` (Real ML-KEM vs. QEQSKE Variant)** | **Complete** | **5,000 trials (`k=2`, `kyber-py` + QRNG per-key NTT `q`): leak vanishes (`52.12%` / `51.09%` weight, `65.62%` / `64.28%` `s[0][0]>0`, all `R² < 0`; `results/mlkem512_comparison_summary.md`)** |
