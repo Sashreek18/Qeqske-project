@@ -56,6 +56,7 @@ import numpy as np
 import psutil
 from scipy import stats
 
+from env_metadata import get_environment_metadata
 from qrng_handler import QRNGSource
 from qeqske_core import QEQSKERandom, key_gen, encrypt_it, decrypt_it
 
@@ -302,7 +303,7 @@ def simulate_key_exchange_with_traces(numbers, n=4, k=2, num_trials=500,
 def save_traces(rows, filepath="results/sender_receiver_traces.json"):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     with open(filepath, "w") as f:
-        json.dump(rows, f, indent=2)
+        json.dump({"environment": get_environment_metadata(), "records": rows}, f, indent=2)
     print(f"\n  Saved {len(rows)} trace records to {filepath}")
 
 

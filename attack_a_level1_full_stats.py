@@ -13,6 +13,7 @@ from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, reca
 
 from attack_a_distinguisher import build_dataset as build_dataset_classical
 from attack_a_sequence import build_dataset as build_dataset_sequence, load_qrng, mersenne_stream, autocorrelated_stream, holdout_eval
+from env_metadata import get_environment_metadata
 from nn_from_scratch import MODELS
 
 def calc_stats(scores):
@@ -195,7 +196,7 @@ if __name__ == "__main__":
     print("Starting Task 1: Sequence Models")
     res_seq = run_sequence()
     
-    final_json = {**res_class, **res_seq}
+    final_json = {"environment": get_environment_metadata(), **res_class, **res_seq}
     import os
     os.makedirs("results", exist_ok=True)
     with open("results/attack_a_level1_full_stats.json", "w") as f:

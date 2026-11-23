@@ -31,6 +31,8 @@ from sklearn.pipeline import make_pipeline
 import warnings
 from sklearn.exceptions import ConvergenceWarning
 
+from env_metadata import get_environment_metadata
+
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 
@@ -39,7 +41,8 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 # ---------------------------------------------------------------------------
 
 with open("results/sender_receiver_traces.json") as f:
-    rows = json.load(f)
+    _raw_traces = json.load(f)
+rows = _raw_traces["records"] if isinstance(_raw_traces, dict) else _raw_traces
 
 N_TRIALS = len(rows)
 print(f"Loaded {N_TRIALS} trace records from results/sender_receiver_traces.json")
@@ -265,6 +268,7 @@ print("3. Check the CV std: a narrow spread (e.g. ±3%) indicates stability acro
 
 with open("results/stress_test_traces.json", "w") as f:
     json.dump({
+        "environment": get_environment_metadata(),
         "n_trials": N_TRIALS,
         "median_secret_weight": float(median_w),
         "class_counts": {"0": int(np.sum(y == 0)), "1": int(np.sum(y == 1))},

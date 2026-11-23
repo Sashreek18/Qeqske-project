@@ -1,4 +1,17 @@
 {
+  "environment": {
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+    "os": "Linux 7.0.0-31-generic",
+    "os_system": "Linux",
+    "os_release": "7.0.0-31-generic",
+    "machine": "x86_64",
+    "cpu_model": "12th Gen Intel(R) Core(TM) i9-12900K",
+    "cpu_cores_logical": 24,
+    "cpu_cores_physical": 16,
+    "python_version": "3.12.3",
+    "python_implementation": "CPython",
+    "numpy_version": "2.5.2"
+  },
   "experiment": {
     "decrypt_label": "decrypt_it_constant_time (NumPy int64 branch-free)",
     "decrypt_function": "decrypt_it_constant_time",
@@ -370,7 +383,10 @@
           "score": 0.5109979204639264,
           "perm_mean": 0.5027690938402956,
           "perm_std": 0.008779125937384401,
-          "pvalue": 0.18407960199004975
+          "pvalue": 0.18407960199004975,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.1841"
         }
       },
       "Gradient Boosting": {
@@ -509,7 +525,10 @@
           "score": 0.5255984817442274,
           "perm_mean": 0.5244659741521083,
           "perm_std": 0.005667262959840596,
-          "pvalue": 0.4228855721393035
+          "pvalue": 0.4228855721393035,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.4229"
         }
       },
       "MLP": {
@@ -648,7 +667,10 @@
           "score": 0.5349994826964979,
           "perm_mean": 0.535950014678937,
           "perm_std": 0.001997315690420391,
-          "pvalue": 0.7960199004975125
+          "pvalue": 0.7960199004975125,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.7960"
         }
       },
       "Logistic Regression": {
@@ -787,7 +809,10 @@
           "score": 0.5357995627765203,
           "perm_mean": 0.5364499765113004,
           "perm_std": 0.0012840149169544804,
-          "pvalue": 0.7064676616915423
+          "pvalue": 0.7064676616915423,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.7065"
         }
       },
       "SVM (RBF)": {
@@ -926,7 +951,10 @@
           "score": 0.5327999226085155,
           "perm_mean": 0.536054976279654,
           "perm_std": 0.001701089742948094,
-          "pvalue": 0.9751243781094527
+          "pvalue": 0.9751243781094527,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.9751"
         }
       }
     },
@@ -1036,8 +1064,12 @@
           "score": -0.41167936259048427,
           "perm_mean": -0.3975732580279053,
           "perm_std": 0.02302183979298333,
-          "pvalue": 0.7164179104477612
-        }
+          "pvalue": 0.7164179104477612,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.7164"
+        },
+        "negative_r2_caveat": true
       },
       "Gradient Boosting": {
         "real": {
@@ -1144,8 +1176,12 @@
           "score": -0.02605855481758475,
           "perm_mean": -0.021700965511134165,
           "perm_std": 0.004994112569328784,
-          "pvalue": 0.8009950248756219
-        }
+          "pvalue": 0.8009950248756219,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.8010"
+        },
+        "negative_r2_caveat": true
       },
       "MLP": {
         "real": {
@@ -1252,8 +1288,12 @@
           "score": -0.005399070988019024,
           "perm_mean": -0.0047445668886658635,
           "perm_std": 0.0025364466621275485,
-          "pvalue": 0.6666666666666666
-        }
+          "pvalue": 0.6666666666666666,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.6667"
+        },
+        "negative_r2_caveat": true
       },
       "Linear Regression": {
         "real": {
@@ -1360,8 +1400,12 @@
           "score": -0.001888346132021379,
           "perm_mean": -0.0014459879943643317,
           "perm_std": 0.0013496888584886594,
-          "pvalue": 0.7164179104477612
-        }
+          "pvalue": 0.7164179104477612,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.7164"
+        },
+        "negative_r2_caveat": true
       },
       "SVR (RBF)": {
         "real": {
@@ -1468,8 +1512,12 @@
           "score": -0.033841920549804616,
           "perm_mean": -0.031141181057112336,
           "perm_std": 0.0027014618332154264,
-          "pvalue": 0.8507462686567164
-        }
+          "pvalue": 0.8507462686567164,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.8507"
+        },
+        "negative_r2_caveat": true
       }
     }
   },
@@ -2318,7 +2366,10 @@
           "score": 0.538400363144658,
           "perm_mean": 0.5356599994526905,
           "perm_std": 0.0019242117813446178,
-          "pvalue": 0.04975124378109453
+          "pvalue": 0.04975124378109453,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.0498"
         }
       }
     },
@@ -2420,7 +2471,8 @@
             ]
           }
         },
-        "gap_real_minus_shuffled_r2": -0.006668836406781564
+        "gap_real_minus_shuffled_r2": -0.006668836406781564,
+        "negative_r2_caveat": true
       },
       "Gradient Boosting": {
         "real": {
@@ -2519,7 +2571,8 @@
             ]
           }
         },
-        "gap_real_minus_shuffled_r2": 0.002140340061906363
+        "gap_real_minus_shuffled_r2": 0.002140340061906363,
+        "negative_r2_caveat": true
       },
       "MLP": {
         "real": {
@@ -2618,7 +2671,8 @@
             ]
           }
         },
-        "gap_real_minus_shuffled_r2": -0.002201298632370747
+        "gap_real_minus_shuffled_r2": -0.002201298632370747,
+        "negative_r2_caveat": true
       },
       "Linear Regression": {
         "real": {
@@ -2725,8 +2779,12 @@
           "score": -0.0007123203866684266,
           "perm_mean": -0.001583364576603848,
           "perm_std": 0.0013417526434291054,
-          "pvalue": 0.23880597014925373
-        }
+          "pvalue": 0.23880597014925373,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.2388"
+        },
+        "negative_r2_caveat": true
       },
       "SVR (RBF)": {
         "real": {
@@ -2825,7 +2883,8 @@
             ]
           }
         },
-        "gap_real_minus_shuffled_r2": -0.002217015239099465
+        "gap_real_minus_shuffled_r2": -0.002217015239099465,
+        "negative_r2_caveat": true
       }
     }
   },
@@ -3730,7 +3789,10 @@
           "score": 0.5382004031366595,
           "perm_mean": 0.5359310070758957,
           "perm_std": 0.0016980389467391717,
-          "pvalue": 0.04477611940298507
+          "pvalue": 0.04477611940298507,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.0448"
         }
       }
     },
@@ -3832,7 +3894,8 @@
             ]
           }
         },
-        "gap_real_minus_shuffled_r2": -0.006540263355641229
+        "gap_real_minus_shuffled_r2": -0.006540263355641229,
+        "negative_r2_caveat": true
       },
       "Gradient Boosting": {
         "real": {
@@ -3931,7 +3994,8 @@
             ]
           }
         },
-        "gap_real_minus_shuffled_r2": 0.0013388905983468778
+        "gap_real_minus_shuffled_r2": 0.0013388905983468778,
+        "negative_r2_caveat": true
       },
       "MLP": {
         "real": {
@@ -4030,7 +4094,8 @@
             ]
           }
         },
-        "gap_real_minus_shuffled_r2": -0.0009909104931320658
+        "gap_real_minus_shuffled_r2": -0.0009909104931320658,
+        "negative_r2_caveat": true
       },
       "Linear Regression": {
         "real": {
@@ -4137,8 +4202,12 @@
           "score": -0.0006789643613824096,
           "perm_mean": -0.0015866609149305982,
           "perm_std": 0.0013425047518057414,
-          "pvalue": 0.23880597014925373
-        }
+          "pvalue": 0.23880597014925373,
+          "pvalue_floor": 0.004975124378109453,
+          "at_floor": false,
+          "pvalue_display": "0.2388"
+        },
+        "negative_r2_caveat": true
       },
       "SVR (RBF)": {
         "real": {
@@ -4237,7 +4306,8 @@
             ]
           }
         },
-        "gap_real_minus_shuffled_r2": -0.0021761277995963196
+        "gap_real_minus_shuffled_r2": -0.0021761277995963196,
+        "negative_r2_caveat": true
       }
     }
   }
