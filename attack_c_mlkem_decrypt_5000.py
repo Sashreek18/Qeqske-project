@@ -1417,6 +1417,7 @@ def run_mlkem_positive_control(
     delays_us=(0.0, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0),
     seed: int = SEED,
     window: int = 51,
+    tag: str | None = None,
 ):
     """Calibrated secret-weight-dependent delay sweep on real ML-KEM-512 decaps."""
     os.makedirs("results", exist_ok=True)
@@ -1586,9 +1587,11 @@ def run_mlkem_positive_control(
         )
     )
 
-    out_json = "results/mlkem512_positive_control_5000.json"
-    out_md = "results/mlkem512_positive_control_5000_summary.md"
-    out_svg = "results/mlkem512_leak_threshold.svg"
+    kem_tag = "mlkem512" if k_param == 2 else "mlkem768"
+    tag_sfx = f"_{tag.strip().lstrip('_')}" if tag else ""
+    out_json = f"results/{kem_tag}_positive_control_{n_trials}{tag_sfx}.json"
+    out_md = f"results/{kem_tag}_positive_control_{n_trials}{tag_sfx}_summary.md"
+    out_svg = f"results/{kem_tag}_leak_threshold{tag_sfx}.svg"
 
     res_dict = to_native({
         "environment": env,
@@ -1676,7 +1679,9 @@ def main():
 
     if args.positive_control:
         delays = tuple(float(x.strip()) for x in args.delays.split(",") if x.strip())
-        run_mlkem_positive_control(k_param=args.k, n_trials=args.n_trials, delays_us=delays, seed=args.seed)
+        run_mlkem_positive_control(
+            k_param=args.k, n_trials=args.n_trials, delays_us=delays, seed=args.seed, tag=args.tag
+        )
         return
 
     if args.variant == "both":
