@@ -428,6 +428,13 @@ def pregenerate_mlkem_trials(
         }
     elif variant == "qeqske":
         src = QRNGSource.from_file(qrng_path, cycle=True)
+        if seed != SEED:
+            n_orig = len(src._original)
+            start_offset = int(np.random.RandomState(seed).randint(1, n_orig))
+            rotated = src._original[start_offset:] + src._original[:start_offset]
+            src = QRNGSource(numbers=rotated, cycle=True)
+        else:
+            start_offset = 0
         rand_bytes_fn = make_qrng_bytes_fn(src)
         d_poly = 16
         kem_cache = {}
@@ -452,7 +459,8 @@ def pregenerate_mlkem_trials(
                 **{k: v for k, v in sec.items() if k != "dk_pke"},
             })
 
-        w_src = MersenneSource(seed=42000)
+        warmup_seed = 42000 if seed == SEED else 42000 + int(seed)
+        w_src = MersenneSource(seed=warmup_seed)
         w_rand_fn = make_qrng_bytes_fn(w_src)
         w_cache = {}
         for _ in range(100):
@@ -467,6 +475,7 @@ def pregenerate_mlkem_trials(
         stream_meta = {
             "source": qrng_path,
             "cycle_enabled": True,
+            "qrng_start_offset": int(start_offset),
             "dataset_size": int(len(src._original)),
             "total_consumed_uint16": int(src.total_consumed),
             "wraps": int(src.wraps),
@@ -1693,7 +1702,8 @@ def main():
             variant="qeqske", k_param=args.k, n_trials=args.n_trials,
             seed=args.seed, skip_tracemalloc=args.skip_tracemalloc, tag=args.tag,
         )
-        comp_path = f"results/mlkem{'512' if args.k == 2 else '768'}_comparison_summary.md"
+        tag_sfx = f"_{args.tag.strip().lstrip('_')}" if args.tag else ""
+        comp_path = f"results/mlkem{'512' if args.k == 2 else '768'}{tag_sfx}_comparison_summary.md"
         generate_comparison_markdown("results/decrypt_leak_5000.json", std_res, qeq_res, comp_path)
         print(f"Saved cross-scale comparison: {comp_path}")
     else:

@@ -160,9 +160,16 @@ class QResidualizer(BaseEstimator, TransformerMixin):
 # Trace Generation & Collection
 # ---------------------------------------------------------------------------
 
-def pregenerate_trials(qrng_path="qrng_combined.txt"):
+def pregenerate_trials(qrng_path="qrng_combined.txt", seed=SEED):
     """Pre-generate 5,000 fresh (key, ciphertext) pairs and 200 warm-up pairs."""
     src = QRNGSource.from_file(qrng_path, cycle=True)
+    if seed != SEED:
+        n_orig = len(src._original)
+        start_offset = int(np.random.RandomState(seed).randint(1, n_orig))
+        rotated = src._original[start_offset:] + src._original[:start_offset]
+        src = QRNGSource(numbers=rotated, cycle=True)
+    else:
+        start_offset = 0
     rng = QEQSKERandom(src)
 
     trials = []
@@ -188,6 +195,7 @@ def pregenerate_trials(qrng_path="qrng_combined.txt"):
     qrng_meta = {
         "source_file": qrng_path,
         "cycle_enabled": True,
+        "qrng_start_offset": int(start_offset),
         "dataset_size": len(src._original),
         "total_consumed": src.total_consumed,
         "wraps": src.wraps,
@@ -195,7 +203,8 @@ def pregenerate_trials(qrng_path="qrng_combined.txt"):
     }
 
     # Separate Mersenne pool for warm-up so warm-up never touches QRNG stream
-    w_src = MersenneSource(seed=42000)
+    warmup_seed = 42000 if seed == SEED else 42000 + int(seed)
+    w_src = MersenneSource(seed=warmup_seed)
     w_rng = QEQSKERandom(w_src)
     warmup_pool = []
     for _ in range(CLEAN_INITIAL_WARMUP):
@@ -243,7 +252,7 @@ def _get_cpu_user_seconds(proc):
     return proc.cpu_times().user
 
 
-def collect_traces(trials, warmup_pool, decrypt_fn=decrypt_it):
+def collect_traces(trials, warmup_pool, decrypt_fn=decrypt_it, seed=SEED):
     """Run randomized, warm-up-interleaved clean & tracemalloc-wrapped passes."""
     proc = psutil.Process(os.getpid())
     records = [
@@ -258,7 +267,7 @@ def collect_traces(trials, warmup_pool, decrypt_fn=decrypt_it):
     # --- Pass 1: Clean uninstrumented timing & CPU user-time ---
     gc.collect()
     _run_clean_warmup(warmup_pool, CLEAN_INITIAL_WARMUP, start_idx=0, decrypt_fn=decrypt_fn)
-    exec_order_clean = np.random.RandomState(SEED).permutation(N_TRIALS)
+    exec_order_clean = np.random.RandomState(seed).permutation(N_TRIALS)
 
     t_pass1_0 = time.perf_counter()
     for pos, idx in enumerate(exec_order_clean):
@@ -287,7 +296,7 @@ def collect_traces(trials, warmup_pool, decrypt_fn=decrypt_it):
     # --- Pass 2: Legacy tracemalloc-wrapped instrumentation ---
     gc.collect()
     _run_tm_warmup(warmup_pool, TM_INITIAL_WARMUP, start_idx=0, decrypt_fn=decrypt_fn)
-    exec_order_tm = np.random.RandomState(SEED + 100).permutation(N_TRIALS)
+    exec_order_tm = np.random.RandomState(seed + 100).permutation(N_TRIALS)
 
     t_pass2_0 = time.perf_counter()
     for pos, idx in enumerate(exec_order_tm):
@@ -455,34 +464,34 @@ def _fold_stats(arr, clamp_unit=False):
     }
 
 
-def _get_classifiers():
+def _get_classifiers(seed=SEED):
     return {
         "Random Forest": lambda: RandomForestClassifier(
-            n_estimators=100, random_state=SEED, n_jobs=1
+            n_estimators=100, random_state=seed, n_jobs=1
         ),
         "Gradient Boosting": lambda: GradientBoostingClassifier(
-            n_estimators=100, max_depth=3, random_state=SEED
+            n_estimators=100, max_depth=3, random_state=seed
         ),
         "MLP": lambda: MLPClassifier(
-            hidden_layer_sizes=(32, 16), max_iter=1000, random_state=SEED
+            hidden_layer_sizes=(32, 16), max_iter=1000, random_state=seed
         ),
         "Logistic Regression": lambda: LogisticRegression(
-            max_iter=1000, random_state=SEED
+            max_iter=1000, random_state=seed
         ),
-        "SVM (RBF)": lambda: SVC(kernel="rbf", random_state=SEED),
+        "SVM (RBF)": lambda: SVC(kernel="rbf", random_state=seed),
     }
 
 
-def _get_regressors():
+def _get_regressors(seed=SEED):
     return {
         "Random Forest": lambda: RandomForestRegressor(
-            n_estimators=100, random_state=SEED, n_jobs=1
+            n_estimators=100, random_state=seed, n_jobs=1
         ),
         "Gradient Boosting": lambda: GradientBoostingRegressor(
-            n_estimators=100, max_depth=3, random_state=SEED
+            n_estimators=100, max_depth=3, random_state=seed
         ),
         "MLP": lambda: MLPRegressor(
-            hidden_layer_sizes=(32, 16), max_iter=1000, random_state=SEED
+            hidden_layer_sizes=(32, 16), max_iter=1000, random_state=seed
         ),
         "Linear Regression": lambda: LinearRegression(),
         "SVR (RBF)": lambda: SVR(kernel="rbf"),
@@ -496,16 +505,17 @@ def run_classification_suite(
     y_cls_shuf,
     majority_baseline,
     perm_all=True,
+    seed=SEED,
 ):
     """Run 5 classifiers with 5x10 CV (real, shuffled, q-resid) + permutation test."""
-    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=SEED)
-    perm_cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=SEED)
+    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=seed)
+    perm_cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=seed)
     X_with_q = np.column_stack([X, q_vals])
     scoring = ("accuracy", "balanced_accuracy", "roc_auc", "f1")
 
     models_out = {}
     pipelines_real = {}
-    for name, clf_fn in _get_classifiers().items():
+    for name, clf_fn in _get_classifiers(seed=seed).items():
         pipe_real = make_pipeline(StandardScaler(), clf_fn())
         pipe_shuf = make_pipeline(StandardScaler(), clf_fn())
         pipe_q = make_pipeline(QResidualizer(), StandardScaler(), clf_fn())
@@ -553,7 +563,7 @@ def run_classification_suite(
             cv=perm_cv,
             n_permutations=N_PERMUTATIONS,
             n_jobs=-1,
-            random_state=SEED,
+            random_state=seed,
         )
         models_out[name]["permutation_test"] = {
             "scoring": "accuracy",
@@ -573,16 +583,17 @@ def run_regression_suite(
     y_reg,
     y_reg_shuf,
     perm_all=True,
+    seed=SEED,
 ):
     """Run 5 regressors for exact secret_weight with 5x10 CV + permutation test."""
-    rkf = RepeatedKFold(n_splits=5, n_repeats=10, random_state=SEED)
-    perm_cv = KFold(n_splits=3, shuffle=True, random_state=SEED)
+    rkf = RepeatedKFold(n_splits=5, n_repeats=10, random_state=seed)
+    perm_cv = KFold(n_splits=3, shuffle=True, random_state=seed)
     X_with_q = np.column_stack([X, q_vals])
     scoring = ("r2", "neg_root_mean_squared_error", "neg_mean_absolute_error")
 
     models_out = {}
     pipelines_real = {}
-    for name, reg_fn in _get_regressors().items():
+    for name, reg_fn in _get_regressors(seed=seed).items():
         pipe_real = make_pipeline(StandardScaler(), reg_fn())
         pipe_shuf = make_pipeline(StandardScaler(), reg_fn())
         pipe_q = make_pipeline(QResidualizer(), StandardScaler(), reg_fn())
@@ -628,7 +639,7 @@ def run_regression_suite(
             cv=perm_cv,
             n_permutations=N_PERMUTATIONS,
             n_jobs=-1,
-            random_state=SEED,
+            random_state=seed,
         )
         models_out[name]["permutation_test"] = {
             "scoring": "r2",
@@ -850,6 +861,7 @@ def analyze_pass(
     y_reg_shuf,
     majority_baseline,
     perm_all=True,
+    seed=SEED,
 ):
     weights = np.array([r["secret_weight"] for r in records], dtype=float)
     q_vals = np.array([r["q"] for r in records], dtype=float)
@@ -859,7 +871,7 @@ def analyze_pass(
 
     descriptives = {k: describe_array([r[k] for r in records]) for k in feature_keys}
     correlations = {
-        k: paired_correlation_with_bootstrap([r[k] for r in records], weights)
+        k: paired_correlation_with_bootstrap([r[k] for r in records], weights, seed=seed)
         for k in feature_keys
     }
 
@@ -910,10 +922,10 @@ def analyze_pass(
     X = np.column_stack([np.array([r[k] for r in records], dtype=float) for k in feature_keys])
 
     classification = run_classification_suite(
-        X, q_vals, y_cls, y_cls_shuf, majority_baseline, perm_all=perm_all
+        X, q_vals, y_cls, y_cls_shuf, majority_baseline, perm_all=perm_all, seed=seed
     )
     regression = run_regression_suite(
-        X, q_vals, y_reg, y_reg_shuf, perm_all=perm_all
+        X, q_vals, y_reg, y_reg_shuf, perm_all=perm_all, seed=seed
     )
 
     correct_cnt = sum(1 for r in records if r[correct_key])
@@ -1043,23 +1055,25 @@ def run_decrypt_leak_pipeline(
     label="decrypt_it (original)",
     pregenerated=None,
     verbose=True,
+    seed=SEED,
 ):
     """Run the full 5,000-trial side-channel leakage evaluation for decrypt_fn."""
     os.makedirs("results", exist_ok=True)
     t_all_0 = time.perf_counter()
 
     if pregenerated is None:
-        trials, warmup_pool, qrng_meta = pregenerate_trials()
+        trials, warmup_pool, qrng_meta = pregenerate_trials(seed=seed)
     else:
         trials, warmup_pool, qrng_meta = pregenerated
 
-    records, pass_timings = collect_traces(trials, warmup_pool, decrypt_fn=decrypt_fn)
+    records, pass_timings = collect_traces(trials, warmup_pool, decrypt_fn=decrypt_fn, seed=seed)
 
     if pregenerated is None:
         del trials
         gc.collect()
 
     env_meta = get_environment_metadata()
+    env_meta["seed"] = int(seed)
 
     with open(traces_path, "w") as f:
         json.dump({"environment": env_meta, "records": to_native(records)}, f, indent=2)
@@ -1069,10 +1083,10 @@ def run_decrypt_leak_pipeline(
     y_cls = (weights > median_w).astype(int)
     majority_baseline = float(max(np.mean(y_cls == 0), np.mean(y_cls == 1)))
 
-    shuf_rng = np.random.RandomState(SEED)
+    shuf_rng = np.random.RandomState(seed)
     y_cls_shuf = shuf_rng.permutation(y_cls)
     y_reg = weights.astype(float)
-    y_reg_shuf = np.random.RandomState(SEED).permutation(y_reg)
+    y_reg_shuf = np.random.RandomState(seed).permutation(y_reg)
 
     clean_res = analyze_pass(
         records=records,
@@ -1087,6 +1101,7 @@ def run_decrypt_leak_pipeline(
         y_reg_shuf=y_reg_shuf,
         majority_baseline=majority_baseline,
         perm_all=True,
+        seed=seed,
     )
 
     tm2_res = analyze_pass(
@@ -1102,6 +1117,7 @@ def run_decrypt_leak_pipeline(
         y_reg_shuf=y_reg_shuf,
         majority_baseline=majority_baseline,
         perm_all=False,
+        seed=seed,
     )
 
     tm4_res = analyze_pass(
@@ -1122,6 +1138,7 @@ def run_decrypt_leak_pipeline(
         y_reg_shuf=y_reg_shuf,
         majority_baseline=majority_baseline,
         perm_all=False,
+        seed=seed,
     )
 
     total_wall_s = time.perf_counter() - t_all_0
@@ -1141,9 +1158,9 @@ def run_decrypt_leak_pipeline(
             "k": K_PARAM,
             "fixed_plaintext": FIXED_PLAINTEXT,
             "plaintext_bits": len(FIXED_PLAINTEXT) * 8,
-            "seed": SEED,
-            "cv_classification": "RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)",
-            "cv_regression": "RepeatedKFold(n_splits=5, n_repeats=10, random_state=42)",
+            "seed": int(seed),
+            "cv_classification": f"RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state={seed})",
+            "cv_regression": f"RepeatedKFold(n_splits=5, n_repeats=10, random_state={seed})",
             "n_bootstrap": N_BOOTSTRAP,
             "n_permutations": N_PERMUTATIONS,
             "clean_warmup_initial": CLEAN_INITIAL_WARMUP,
@@ -1257,6 +1274,12 @@ def compare_results_files(path_a, path_b):
 def main():
     parser = argparse.ArgumentParser(description="5,000-trial decrypt_it side-channel leakage evaluation.")
     parser.add_argument("--tag", type=str, default=None, help="Suffix tag for host-specific output files (e.g. macos_m1).")
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=SEED,
+        help="Random seed controlling key generation (QRNG stream offset), randomized trial order, CV/permutations, and output suffix when non-default (default: 42).",
+    )
     parser.add_argument("--regenerate-summary", nargs=2, metavar=("JSON_PATH", "MD_PATH"), help="Regenerate markdown summary from an existing JSON file and exit.")
     parser.add_argument("--compare", nargs=2, metavar=("JSON_A", "JSON_B"), help="Print a side-by-side comparison of two decrypt_leak_5000 JSON files and exit.")
     args = parser.parse_args()
@@ -1270,16 +1293,23 @@ def main():
         compare_results_files(args.compare[0], args.compare[1])
         return
 
-    if args.tag:
-        tag = args.tag.strip().lstrip("_")
+    tag_clean = args.tag.strip().lstrip("_") if args.tag else None
+    tag_part = f"_{tag_clean}" if tag_clean else ""
+    seed_in_tag = bool(tag_clean and f"seed{args.seed}" in tag_clean)
+    seed_part = f"_seed{args.seed}" if (args.seed != SEED and not seed_in_tag) else ""
+    sfx = f"{tag_part}{seed_part}"
+
+    if sfx:
+        desc_parts = [p for p in (tag_clean, f"seed={args.seed}" if args.seed != SEED else None) if p]
         run_decrypt_leak_pipeline(
-            traces_path=f"results/decrypt_traces_5000_{tag}.json",
-            results_path=f"results/decrypt_leak_5000_{tag}.json",
-            summary_path=f"results/decrypt_leak_5000_{tag}_summary.md",
-            label=f"decrypt_it (original, {tag})",
+            traces_path=f"results/decrypt_traces_5000{sfx}.json",
+            results_path=f"results/decrypt_leak_5000{sfx}.json",
+            summary_path=f"results/decrypt_leak_5000{sfx}_summary.md",
+            label=f"decrypt_it (original, {', '.join(desc_parts)})",
+            seed=args.seed,
         )
     else:
-        run_decrypt_leak_pipeline()
+        run_decrypt_leak_pipeline(seed=args.seed)
 
 
 if __name__ == "__main__":
