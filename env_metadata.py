@@ -71,6 +71,34 @@ def get_cpu_model() -> str:
     return platform.processor() or platform.machine() or "unknown"
 
 
+def get_cpu_governor() -> str | None:
+    """Return the active Linux cpufreq scaling governor if readable."""
+    path = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    if sys.platform.startswith("linux") and os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                val = f.read().strip()
+                if val:
+                    return val
+        except OSError:
+            pass
+    return None
+
+
+def get_cpu_scaling_driver() -> str | None:
+    """Return the active Linux cpufreq scaling driver if readable."""
+    path = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver"
+    if sys.platform.startswith("linux") and os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                val = f.read().strip()
+                if val:
+                    return val
+        except OSError:
+            pass
+    return None
+
+
 def get_environment_metadata() -> dict:
     """Return standardized host/runtime metadata for results JSON files."""
     return {
@@ -82,6 +110,8 @@ def get_environment_metadata() -> dict:
         "cpu_model": get_cpu_model(),
         "cpu_cores_logical": os.cpu_count(),
         "cpu_cores_physical": psutil.cpu_count(logical=False) if psutil is not None else None,
+        "cpu_governor": get_cpu_governor(),
+        "cpu_scaling_driver": get_cpu_scaling_driver(),
         "python_version": platform.python_version(),
         "python_implementation": platform.python_implementation(),
         "numpy_version": np.__version__ if np is not None else None,

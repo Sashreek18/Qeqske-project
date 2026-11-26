@@ -1,0 +1,76 @@
+{
+  "environment": {
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+    "os": "Linux 7.0.0-31-generic",
+    "os_system": "Linux",
+    "os_release": "7.0.0-31-generic",
+    "machine": "x86_64",
+    "cpu_model": "12th Gen Intel(R) Core(TM) i9-12900K",
+    "cpu_cores_logical": 24,
+    "cpu_cores_physical": 16,
+    "cpu_governor": "powersave",
+    "cpu_scaling_driver": "intel_pstate",
+    "python_version": "3.12.3",
+    "python_implementation": "CPython",
+    "numpy_version": "2.5.2"
+  },
+  "source_traces_file": "results/sender_receiver_traces_5000.json",
+  "n_trials": 5000,
+  "verified_trace_mismatches": 0,
+  "zero_column_key_count": 119,
+  "zero_column_key_pct": 2.38,
+  "non_zero_column_key_count": 4881,
+  "zero_column_max_secret_weight": 4,
+  "feature_correlations_vs_secret_weight": {
+    "ct_entropy_approx": {
+      "all_trials": {
+        "pearson_r": 0.15048419143866923,
+        "pearson_p": 1.0270873928811247e-26
+      },
+      "excluding_zero_col_keys": {
+        "pearson_r": 0.11247326558392856,
+        "pearson_p": 3.251520393846652e-15
+      }
+    },
+    "ct_coefficient_of_variation": {
+      "all_trials": {
+        "pearson_r": -0.13399564184355195,
+        "pearson_p": 1.8085411000575107e-21
+      },
+      "excluding_zero_col_keys": {
+        "pearson_r": -0.017861623566542587,
+        "pearson_p": 0.2121529847404724
+      }
+    },
+    "v_mean_over_q": {
+      "all_trials": {
+        "pearson_r": 0.11899437344116877,
+        "pearson_p": 3.1174478362690044e-17
+      },
+      "excluding_zero_col_keys": {
+        "pearson_r": 0.025915038818805344,
+        "pearson_p": 0.07023803180288536
+      }
+    },
+    "v_kurtosis": {
+      "all_trials": {
+        "pearson_r": 0.09439168451616757,
+        "pearson_p": 2.2660153307478175e-11
+      },
+      "excluding_zero_col_keys": {
+        "pearson_r": -0.0033478272886508283,
+        "pearson_p": 0.8151139537776783
+      }
+    },
+    "v_skewness": {
+      "all_trials": {
+        "pearson_r": -0.09320614765042211,
+        "pearson_p": 4.018323867601602e-11
+      },
+      "excluding_zero_col_keys": {
+        "pearson_r": -0.02362698468321109,
+        "pearson_p": 0.09884339159582722
+      }
+    }
+  }
+}

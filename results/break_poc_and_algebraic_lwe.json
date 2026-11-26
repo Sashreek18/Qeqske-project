@@ -1,0 +1,37 @@
+{
+  "environment": {
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+    "os": "Linux 7.0.0-31-generic",
+    "os_system": "Linux",
+    "os_release": "7.0.0-31-generic",
+    "machine": "x86_64",
+    "cpu_model": "12th Gen Intel(R) Core(TM) i9-12900K",
+    "cpu_cores_logical": 24,
+    "cpu_cores_physical": 16,
+    "cpu_governor": "powersave",
+    "cpu_scaling_driver": "intel_pstate",
+    "python_version": "3.12.3",
+    "python_implementation": "CPython",
+    "numpy_version": "2.5.2"
+  },
+  "break_poc": {
+    "break_1_vulnerable_recovered": true,
+    "break_1_fixed_recovered": false,
+    "break_2_recovered": 200,
+    "break_2_trials": 200,
+    "break_2_recovery_rate": 1.0,
+    "break_2_total_seconds": 0.0686872520018369,
+    "break_2_ms_per_key": 0.3434362600091845
+  },
+  "attack_e_algebraic_lwe": {
+    "recovered": 300,
+    "trials": 300,
+    "recovery_rate": 1.0,
+    "decrypt_verified": 300,
+    "total_seconds": 0.2544141069520265,
+    "mean_ms_per_key": 0.17804958003883561,
+    "median_ms_per_key": 0.17688795924186707,
+    "max_ms_per_key": 0.34732907079160213,
+    "mean_candidates_checked": 78.06333333333333
+  }
+}
