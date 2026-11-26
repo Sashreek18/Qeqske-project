@@ -904,11 +904,21 @@ def generate_mlkem_summary_markdown(json_path: str, md_path: str):
         f.write("\n".join(lines) + "\n")
 
 
-def generate_comparison_markdown(toy_json_path: str, std_json: dict, qeq_json: dict, out_md_path: str):
-    toy = None
-    if os.path.exists(toy_json_path):
-        with open(toy_json_path, "r") as f:
-            toy = json.load(f)
+def generate_comparison_markdown(
+    toy_json_path: str,
+    std_json: dict,
+    qeq_json: dict,
+    out_md_path: str,
+    extra_toy_json_paths: list[str] | None = None,
+):
+    """Render cross-scale comparison Markdown table from existing leak JSONs."""
+    toy_entries = []
+    seen_paths = set()
+    for p in [toy_json_path] + list(extra_toy_json_paths or []):
+        if p and p not in seen_paths and os.path.exists(p):
+            seen_paths.add(p)
+            with open(p, "r") as f:
+                toy_entries.append((p, json.load(f)))
 
     def _row_mlkem(label, d):
         c_wt = d["decaps_clean"]["weight_classification"]
@@ -936,34 +946,50 @@ def generate_comparison_markdown(toy_json_path: str, std_json: dict, qeq_json: d
             "s00_clf": f"{c_s0[b_sc]['real']['accuracy']['mean']*100:.2f}% vs {d['targets']['s00_positive_majority_baseline']*100:.2f}% ({b_sc}, p {_fmt_perm_p(c_s0[b_sc].get('permutation_test'), n_perm)})",
         }
 
-    rows = []
-    if toy:
-        tc = toy["clean_uninstrumented"]
+    def _row_toy(d, src_path: str):
+        tc = d["clean_uninstrumented"]
         bwc = max(tc["classification"], key=lambda m: tc["classification"][m]["real"]["accuracy"]["mean"])
         bwr = max(tc["regression"], key=lambda m: tc["regression"][m]["real"]["r2"]["mean"])
-        tm = toy["tracemalloc_instrumented_2feat"]
+        tm = d["tracemalloc_instrumented_2feat"]
         btw = max(tm["classification"], key=lambda m: tm["classification"][m]["real"]["accuracy"]["mean"])
-        n_perm = toy["experiment"].get("n_permutations", N_PERMUTATIONS)
-        rows.append({
-            "label": "Toy QEQSKE (`decrypt_it`)",
+        n_perm = d["experiment"].get("n_permutations", N_PERMUTATIONS)
+        toy_seed = d["experiment"].get("seed", SEED)
+        return {
+            "label": f"Toy QEQSKE (`decrypt_it`, seed={toy_seed}, `{src_path}`)",
             "params": "n=4, k=2, per-key prime q",
             "timing": f"{tc['descriptives']['dec_timing_us']['mean']:.2f} ± {tc['descriptives']['dec_timing_us']['std']:.2f} µs",
             "rho_wt": f"{tc['correlations']['dec_timing_us']['spearman_rho']:+.4f}",
-            "wt_clf": f"{tc['classification'][bwc]['real']['accuracy']['mean']*100:.2f}% vs {toy['targets']['majority_baseline']*100:.2f}% ({bwc}, p {_fmt_perm_p(tc['classification'][bwc].get('permutation_test'), n_perm)})",
+            "wt_clf": f"{tc['classification'][bwc]['real']['accuracy']['mean']*100:.2f}% vs {d['targets']['majority_baseline']*100:.2f}% ({bwc}, p {_fmt_perm_p(tc['classification'][bwc].get('permutation_test'), n_perm)})",
             "wt_reg": f"{tc['regression'][bwr]['real']['r2']['mean']:+.4f} ({bwr})",
             "pke_wt": "N/A (no FO layer)",
             "tm_wt": f"{tm['classification'][btw]['real']['accuracy']['mean']*100:.2f}% ({btw}, ρ={tm['correlations']['tm_dec_timing_us']['spearman_rho']:+.4f})",
             "s00_clf": "N/A (at baseline in Prog. Ladder)",
-        })
-    rows.append(_row_mlkem(f"Standard ML-KEM (`kyber-py`, k={std_json['experiment']['k']})", std_json))
-    rows.append(_row_mlkem(f"QEQSKE-Variant ML-KEM (QRNG + per-key q, k={qeq_json['experiment']['k']})", qeq_json))
+        }
+
+    rows = [_row_toy(toy_d, p) for p, toy_d in toy_entries]
+    rows.append(_row_mlkem(f"Standard ML-KEM (`kyber-py`, k={std_json['experiment']['k']}, seed={std_json['experiment'].get('seed', SEED)})", std_json))
+    rows.append(_row_mlkem(f"QEQSKE-Variant ML-KEM (QRNG + per-key q, k={qeq_json['experiment']['k']}, seed={qeq_json['experiment'].get('seed', SEED)})", qeq_json))
 
     lines = [
         "# Cross-Scale Comparison: Toy QEQSKE vs. Real ML-KEM (`n=256`, `kyber-py`) vs. QEQSKE-Variant ML-KEM",
         "",
+    ]
+    mlkem_seed = std_json["experiment"].get("seed", SEED)
+    if toy_entries and toy_entries[0][1]["experiment"].get("seed", SEED) != mlkem_seed:
+        primary_path, primary_toy = toy_entries[0]
+        primary_seed = primary_toy["experiment"].get("seed", SEED)
+        if len(toy_entries) > 1:
+            extra_desc = ", and the adjacent matching-seed Toy QEQSKE row is from `" + toy_entries[1][0] + f"` (seed-{toy_entries[1][1]['experiment'].get('seed', SEED)})"
+        else:
+            extra_desc = ""
+        lines.extend([
+            f"> **Seed Note:** The first Toy QEQSKE row below is from the seed-{primary_seed} run (`{primary_path}`), whereas the ML-KEM rows are from seed-{mlkem_seed}{extra_desc}.",
+            "",
+        ])
+    lines.extend([
         "| System | Parameters & `q` | Clean Timing | Clean `ρ_weight` | Clean Weight Clf vs. Baseline | Clean Weight Reg `R²` | Isolated `_k_pke_decrypt` | `tracemalloc` `decaps` | `s[0][0] > 0` Clf vs. Baseline |",
         "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
-    ]
+    ])
     for r in rows:
         lines.append(
             f"| {r['label']} | {r['params']} | {r['timing']} | {r['rho_wt']} | {r['wt_clf']} | {r['wt_reg']} | {r['pke_wt']} | {r['tm_wt']} | {r['s00_clf']} |"
@@ -1704,7 +1730,15 @@ def main():
         )
         tag_sfx = f"_{args.tag.strip().lstrip('_')}" if args.tag else ""
         comp_path = f"results/mlkem{'512' if args.k == 2 else '768'}{tag_sfx}_comparison_summary.md"
-        generate_comparison_markdown("results/decrypt_leak_5000.json", std_res, qeq_res, comp_path)
+        extra_toys = []
+        if args.seed != SEED:
+            cand_toy = f"results/decrypt_leak_5000{tag_sfx}.json"
+            if os.path.exists(cand_toy):
+                extra_toys.append(cand_toy)
+        generate_comparison_markdown(
+            "results/decrypt_leak_5000.json", std_res, qeq_res, comp_path,
+            extra_toy_json_paths=extra_toys,
+        )
         print(f"Saved cross-scale comparison: {comp_path}")
     else:
         run_mlkem_pipeline(
