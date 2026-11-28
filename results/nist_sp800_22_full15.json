@@ -1,0 +1,854 @@
+{
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "os": "Darwin 27.0.0",
+    "os_system": "Darwin",
+    "os_release": "27.0.0",
+    "machine": "arm64",
+    "cpu_model": "Apple M2",
+    "cpu_cores_logical": 8,
+    "cpu_cores_physical": 8,
+    "cpu_governor": null,
+    "cpu_scaling_driver": null,
+    "python_version": "3.13.1",
+    "python_implementation": "CPython",
+    "numpy_version": "2.2.6"
+  },
+  "alpha": 0.01,
+  "slice_bits": 1000000,
+  "total_wall_seconds": 235.0950910410029,
+  "single_slice_1m": {
+    "anu_qrng": {
+      "label": "ANU Optical QRNG (qrng_combined.txt)",
+      "total_available_bits": 17711104,
+      "slice_bits": 1000000,
+      "passed_count": 13,
+      "total_tests": 15,
+      "tests": [
+        {
+          "test": "1. Frequency (Monobit)",
+          "p_value": 0.03555327580413391,
+          "pass": true,
+          "stat": 2.102
+        },
+        {
+          "test": "2. Block Frequency (M=128)",
+          "p_value": 0.35647719764572705,
+          "pass": true,
+          "chi2": 7857.40625
+        },
+        {
+          "test": "3. Runs",
+          "p_value": 0.21661209880548404,
+          "pass": true,
+          "v_obs": 499380
+        },
+        {
+          "test": "4. Longest Run of Ones",
+          "p_value": 0.815918433512197,
+          "pass": true,
+          "chi2": 2.9433843670445383
+        },
+        {
+          "test": "5. Binary Matrix Rank (32x32)",
+          "p_value": 0.8693434273919248,
+          "pass": true,
+          "chi2": 0.28003406681479226
+        },
+        {
+          "test": "6. DFT (Spectral)",
+          "p_value": 0.7480724512563635,
+          "pass": true,
+          "N1": 474965,
+          "N0": 475000.0
+        },
+        {
+          "test": "7. Non-Overlapping Template (m=9)",
+          "p_value": 0.8355166649192799,
+          "pass": true,
+          "chi2": 4.23296362020202
+        },
+        {
+          "test": "8. Overlapping Template (m=9)",
+          "p_value": 0.16946018240971794,
+          "pass": true,
+          "chi2": 7.768564718012238
+        },
+        {
+          "test": "9. Maurer's Universal (L=7)",
+          "p_value": 0.12729319389292668,
+          "pass": true,
+          "fn": 6.192029220638536
+        },
+        {
+          "test": "10. Linear Complexity (M=500)",
+          "p_value": 0.14877178048949782,
+          "pass": true,
+          "chi2": 9.470971226154575
+        },
+        {
+          "test": "11. Serial (m=16)",
+          "p_value": 0.6761475387758736,
+          "p_value_2": 0.8497908573216171,
+          "min_p_value": 0.6761475387758736,
+          "pass": true
+        },
+        {
+          "test": "12. Approximate Entropy (m=10)",
+          "p_value": 0.2549089642713231,
+          "pass": true,
+          "apen": 0.6926204601520007
+        },
+        {
+          "test": "13. Cumulative Sums",
+          "p_value": 0.0452153769383727,
+          "p_value_backward": 0.060928698638065715,
+          "min_p_value": 0.0452153769383727,
+          "pass": true
+        },
+        {
+          "test": "14. Random Excursions (8 states)",
+          "p_value": null,
+          "pass": false,
+          "J": 249,
+          "note": "Insufficient cycles J < 500"
+        },
+        {
+          "test": "15. Random Excursions Var (18 states)",
+          "p_value": null,
+          "pass": false,
+          "J": 249,
+          "note": "Insufficient cycles J < 500"
+        }
+      ]
+    },
+    "ibmq_qrng": {
+      "label": "HCL IBMQ Superconducting QRNG (fixbit-IBMQ.txt)",
+      "total_available_bits": 9427088,
+      "slice_bits": 1000000,
+      "passed_count": 13,
+      "total_tests": 15,
+      "tests": [
+        {
+          "test": "1. Frequency (Monobit)",
+          "p_value": 0.850876651180284,
+          "pass": true,
+          "stat": 0.188
+        },
+        {
+          "test": "2. Block Frequency (M=128)",
+          "p_value": 0.03555168408726345,
+          "pass": true,
+          "chi2": 8039.09375
+        },
+        {
+          "test": "3. Runs",
+          "p_value": 0.19636936900759272,
+          "pass": true,
+          "v_obs": 499354
+        },
+        {
+          "test": "4. Longest Run of Ones",
+          "p_value": 0.9666666714218124,
+          "pass": true,
+          "chi2": 1.3866301965835854
+        },
+        {
+          "test": "5. Binary Matrix Rank (32x32)",
+          "p_value": 0.8141794330074674,
+          "pass": true,
+          "chi2": 0.4111490072028421
+        },
+        {
+          "test": "6. DFT (Spectral)",
+          "p_value": 0.37834140921736936,
+          "pass": true,
+          "N1": 474904,
+          "N0": 475000.0
+        },
+        {
+          "test": "7. Non-Overlapping Template (m=9)",
+          "p_value": 0.4549200174625543,
+          "pass": true,
+          "chi2": 7.7832936727272735
+        },
+        {
+          "test": "8. Overlapping Template (m=9)",
+          "p_value": 0.516846151049943,
+          "pass": true,
+          "chi2": 4.229662218686862
+        },
+        {
+          "test": "9. Maurer's Universal (L=7)",
+          "p_value": 0.4066771049564516,
+          "pass": true,
+          "fn": 6.198547820775438
+        },
+        {
+          "test": "10. Linear Complexity (M=500)",
+          "p_value": 0.03266821236606182,
+          "pass": true,
+          "chi2": 13.740902047021017
+        },
+        {
+          "test": "11. Serial (m=16)",
+          "p_value": 0.5880576859239921,
+          "p_value_2": 0.03480456627052284,
+          "min_p_value": 0.03480456627052284,
+          "pass": true
+        },
+        {
+          "test": "12. Approximate Entropy (m=10)",
+          "p_value": 0.5898225105268092,
+          "pass": true,
+          "apen": 0.6926406331532142
+        },
+        {
+          "test": "13. Cumulative Sums",
+          "p_value": 0.3520126941578249,
+          "p_value_backward": 0.4870898735885112,
+          "min_p_value": 0.3520126941578249,
+          "pass": true
+        },
+        {
+          "test": "14. Random Excursions (8 states)",
+          "p_value": null,
+          "pass": false,
+          "J": 392,
+          "note": "Insufficient cycles J < 500"
+        },
+        {
+          "test": "15. Random Excursions Var (18 states)",
+          "p_value": null,
+          "pass": false,
+          "J": 392,
+          "note": "Insufficient cycles J < 500"
+        }
+      ]
+    },
+    "mersenne_twister": {
+      "label": "Mersenne Twister MT19937 (mersenne_large_baseline.txt)",
+      "total_available_bits": 3162112,
+      "slice_bits": 1000000,
+      "passed_count": 13,
+      "total_tests": 15,
+      "tests": [
+        {
+          "test": "1. Frequency (Monobit)",
+          "p_value": 0.8681569501722293,
+          "pass": true,
+          "stat": 0.166
+        },
+        {
+          "test": "2. Block Frequency (M=128)",
+          "p_value": 0.3576850184130744,
+          "pass": true,
+          "chi2": 7857.0
+        },
+        {
+          "test": "3. Runs",
+          "p_value": 0.035555684659440666,
+          "pass": true,
+          "v_obs": 498949
+        },
+        {
+          "test": "4. Longest Run of Ones",
+          "p_value": 0.44858486734975134,
+          "pass": true,
+          "chi2": 5.777377763369001
+        },
+        {
+          "test": "5. Binary Matrix Rank (32x32)",
+          "p_value": 0.946795780589387,
+          "pass": true,
+          "chi2": 0.1093437156968998
+        },
+        {
+          "test": "6. DFT (Spectral)",
+          "p_value": 0.25134910881022277,
+          "pass": true,
+          "N1": 475125,
+          "N0": 475000.0
+        },
+        {
+          "test": "7. Non-Overlapping Template (m=9)",
+          "p_value": 0.39064113960960556,
+          "pass": true,
+          "chi2": 8.451628476767677
+        },
+        {
+          "test": "8. Overlapping Template (m=9)",
+          "p_value": 0.12905972943635316,
+          "pass": true,
+          "chi2": 8.536120960474836
+        },
+        {
+          "test": "9. Maurer's Universal (L=7)",
+          "p_value": 0.3726234272787201,
+          "pass": true,
+          "fn": 6.198718950463228
+        },
+        {
+          "test": "10. Linear Complexity (M=500)",
+          "p_value": 0.7085608170582219,
+          "pass": true,
+          "chi2": 3.7641229085814936
+        },
+        {
+          "test": "11. Serial (m=16)",
+          "p_value": 0.8706966133264699,
+          "p_value_2": 0.8661423269619413,
+          "min_p_value": 0.8661423269619413,
+          "pass": true
+        },
+        {
+          "test": "12. Approximate Entropy (m=10)",
+          "p_value": 0.6153014415571325,
+          "pass": true,
+          "apen": 0.6926421162539818
+        },
+        {
+          "test": "13. Cumulative Sums",
+          "p_value": 0.7542564439642376,
+          "p_value_backward": 0.600221721675622,
+          "min_p_value": 0.600221721675622,
+          "pass": true
+        },
+        {
+          "test": "14. Random Excursions (8 states)",
+          "p_value": null,
+          "pass": false,
+          "J": 396,
+          "note": "Insufficient cycles J < 500"
+        },
+        {
+          "test": "15. Random Excursions Var (18 states)",
+          "p_value": null,
+          "pass": false,
+          "J": 396,
+          "note": "Insufficient cycles J < 500"
+        }
+      ]
+    }
+  },
+  "multiblock_1m": {
+    "anu_qrng": {
+      "n_blocks": 9,
+      "bits_per_block": 1000000,
+      "tests": [
+        {
+          "test": "1. Frequency (Monobit)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.3857531651517193
+        },
+        {
+          "test": "2. Block Frequency (M=128)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.37794745410113617
+        },
+        {
+          "test": "3. Runs",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.384021261660345
+        },
+        {
+          "test": "4. Longest Run of Ones",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.37475075539623015
+        },
+        {
+          "test": "5. Binary Matrix Rank (32x32)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.42033205743527613
+        },
+        {
+          "test": "6. DFT (Spectral)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.5362681709872956
+        },
+        {
+          "test": "7. Non-Overlapping Template (m=9)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.6377505124811406
+        },
+        {
+          "test": "8. Overlapping Template (m=9)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.362884721993998
+        },
+        {
+          "test": "9. Maurer's Universal (L=7)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.48748523862589077
+        },
+        {
+          "test": "10. Linear Complexity (M=500)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.4662872078147012
+        },
+        {
+          "test": "11. Serial (m=16)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.4121598193533617
+        },
+        {
+          "test": "12. Approximate Entropy (m=10)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.6148232950839276
+        },
+        {
+          "test": "13. Cumulative Sums",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.43578894893056747
+        },
+        {
+          "test": "14. Random Excursions (8 states)",
+          "passed_blocks": 5,
+          "eligible_blocks": 5,
+          "proportion": 1.0,
+          "mean_p": 0.2168422714898952
+        },
+        {
+          "test": "15. Random Excursions Var (18 states)",
+          "passed_blocks": 5,
+          "eligible_blocks": 5,
+          "proportion": 1.0,
+          "mean_p": 0.12065207939972702
+        }
+      ]
+    },
+    "ibmq_qrng": {
+      "n_blocks": 9,
+      "bits_per_block": 1000000,
+      "tests": [
+        {
+          "test": "1. Frequency (Monobit)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.6099756474660338
+        },
+        {
+          "test": "2. Block Frequency (M=128)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.39347805336313707
+        },
+        {
+          "test": "3. Runs",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.44748051891551527
+        },
+        {
+          "test": "4. Longest Run of Ones",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.6303587976631226
+        },
+        {
+          "test": "5. Binary Matrix Rank (32x32)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.6401967021633701
+        },
+        {
+          "test": "6. DFT (Spectral)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.46528072970399403
+        },
+        {
+          "test": "7. Non-Overlapping Template (m=9)",
+          "passed_blocks": 8,
+          "eligible_blocks": 9,
+          "proportion": 0.8888888888888888,
+          "mean_p": 0.55875019992575
+        },
+        {
+          "test": "8. Overlapping Template (m=9)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.7043346500936517
+        },
+        {
+          "test": "9. Maurer's Universal (L=7)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.4443541343737309
+        },
+        {
+          "test": "10. Linear Complexity (M=500)",
+          "passed_blocks": 8,
+          "eligible_blocks": 9,
+          "proportion": 0.8888888888888888,
+          "mean_p": 0.4383476391321968
+        },
+        {
+          "test": "11. Serial (m=16)",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.6246681951227384
+        },
+        {
+          "test": "12. Approximate Entropy (m=10)",
+          "passed_blocks": 8,
+          "eligible_blocks": 9,
+          "proportion": 0.8888888888888888,
+          "mean_p": 0.3376204257193398
+        },
+        {
+          "test": "13. Cumulative Sums",
+          "passed_blocks": 9,
+          "eligible_blocks": 9,
+          "proportion": 1.0,
+          "mean_p": 0.5560794502221653
+        },
+        {
+          "test": "14. Random Excursions (8 states)",
+          "passed_blocks": 5,
+          "eligible_blocks": 6,
+          "proportion": 0.8333333333333334,
+          "mean_p": 0.21916026575833758
+        },
+        {
+          "test": "15. Random Excursions Var (18 states)",
+          "passed_blocks": 6,
+          "eligible_blocks": 6,
+          "proportion": 1.0,
+          "mean_p": 0.1688211017680987
+        }
+      ]
+    },
+    "mersenne_twister": {
+      "n_blocks": 3,
+      "bits_per_block": 1000000,
+      "tests": [
+        {
+          "test": "1. Frequency (Monobit)",
+          "passed_blocks": 3,
+          "eligible_blocks": 3,
+          "proportion": 1.0,
+          "mean_p": 0.7119669249247044
+        },
+        {
+          "test": "2. Block Frequency (M=128)",
+          "passed_blocks": 3,
+          "eligible_blocks": 3,
+          "proportion": 1.0,
+          "mean_p": 0.7263351969587015
+        },
+        {
+          "test": "3. Runs",
+          "passed_blocks": 3,
+          "eligible_blocks": 3,
+          "proportion": 1.0,
+          "mean_p": 0.42102189039448484
+        },
+        {
+          "test": "4. Longest Run of Ones",
+          "passed_blocks": 3,
+          "eligible_blocks": 3,
+          "proportion": 1.0,
+          "mean_p": 0.3184830794636812
+        },
+        {
+          "test": "5. Binary Matrix Rank (32x32)",
+          "passed_blocks": 3,
+          "eligible_blocks": 3,
+          "proportion": 1.0,
+          "mean_p": 0.5962449452579955
+        },
+        {
+          "test": "6. DFT (Spectral)",
+          "passed_blocks": 3,
+          "eligible_blocks": 3,
+          "proportion": 1.0,
+          "mean_p": 0.23019570986486634
+        },
+        {
+          "test": "7. Non-Overlapping Template (m=9)",
+          "passed_blocks": 2,
+          "eligible_blocks": 3,
+          "proportion": 0.6666666666666666,
+          "mean_p": 0.45325356479577766
+        },
+        {
+          "test": "8. Overlapping Template (m=9)",
+          "passed_blocks": 3,
+          "eligible_blocks": 3,
+          "proportion": 1.0,
+          "mean_p": 0.2331089576193129
+        },
+        {
+          "test": "9. Maurer's Universal (L=7)",
+          "passed_blocks": 3,
+          "eligible_blocks": 3,
+          "proportion": 1.0,
+          "mean_p": 0.7586046394461251
+        },
+        {
+          "test": "10. Linear Complexity (M=500)",
+          "passed_blocks": 3,
+          "eligible_blocks": 3,
+          "proportion": 1.0,
+          "mean_p": 0.87623199978824
+        },
+        {
+          "test": "11. Serial (m=16)",
+          "passed_blocks": 3,
+          "eligible_blocks": 3,
+          "proportion": 1.0,
+          "mean_p": 0.6622728445623011
+        },
+        {
+          "test": "12. Approximate Entropy (m=10)",
+          "passed_blocks": 3,
+          "eligible_blocks": 3,
+          "proportion": 1.0,
+          "mean_p": 0.5553411583215119
+        },
+        {
+          "test": "13. Cumulative Sums",
+          "passed_blocks": 3,
+          "eligible_blocks": 3,
+          "proportion": 1.0,
+          "mean_p": 0.5903284176661949
+        },
+        {
+          "test": "14. Random Excursions (8 states)",
+          "passed_blocks": 1,
+          "eligible_blocks": 1,
+          "proportion": 1.0,
+          "mean_p": 0.21362973633662857
+        },
+        {
+          "test": "15. Random Excursions Var (18 states)",
+          "passed_blocks": 1,
+          "eligible_blocks": 1,
+          "proportion": 1.0,
+          "mean_p": 0.04811785672786445
+        }
+      ]
+    }
+  },
+  "excursions_3m": {
+    "anu_qrng": {
+      "bits_evaluated": 3162112,
+      "test_14": {
+        "test": "14. Random Excursions (8 states)",
+        "p_value": null,
+        "pass": false,
+        "J": 249,
+        "note": "Insufficient cycles J < 500"
+      },
+      "test_15": {
+        "test": "15. Random Excursions Var (18 states)",
+        "p_value": null,
+        "pass": false,
+        "J": 249,
+        "note": "Insufficient cycles J < 500"
+      }
+    },
+    "ibmq_qrng": {
+      "bits_evaluated": 3162112,
+      "test_14": {
+        "test": "14. Random Excursions (8 states)",
+        "p_value": 0.027888672758865245,
+        "median_p_value": 0.33754495114650934,
+        "passed_states": "8/8",
+        "pass": true,
+        "J": 686,
+        "state_pvalues": {
+          "-4": 0.20607509972305638,
+          "-3": 0.36573791581905035,
+          "-2": 0.8109858911439367,
+          "-1": 0.30935198647396833,
+          "1": 0.14399069976031686,
+          "2": 0.027888672758865245,
+          "3": 0.9554532821772218,
+          "4": 0.5671018117575782
+        }
+      },
+      "test_15": {
+        "test": "15. Random Excursions Var (18 states)",
+        "p_value": 0.11738307801855119,
+        "median_p_value": 0.40170368358274394,
+        "passed_states": "18/18",
+        "pass": true,
+        "J": 686,
+        "state_pvalues": {
+          "-9": 0.864818244569288,
+          "-8": 0.922257859652062,
+          "-7": 0.8809579320850467,
+          "-6": 0.6252647922912686,
+          "-5": 0.5525494537183073,
+          "-4": 0.3970292480556826,
+          "-3": 0.1724667356171241,
+          "-2": 0.15606926343164354,
+          "-1": 0.1305700181157362,
+          "1": 0.11738307801855119,
+          "2": 0.7434206976952524,
+          "3": 0.5869140056401627,
+          "4": 0.4750505240539531,
+          "5": 0.32221960063596455,
+          "6": 0.40637811910980526,
+          "7": 0.37290657896645174,
+          "8": 0.20705698008935547,
+          "9": 0.1478761833982276
+        }
+      }
+    },
+    "mersenne_twister": {
+      "bits_evaluated": 3162112,
+      "test_14": {
+        "test": "14. Random Excursions (8 states)",
+        "p_value": 0.32451991805558383,
+        "median_p_value": 0.5823375645260431,
+        "passed_states": "8/8",
+        "pass": true,
+        "J": 2275,
+        "state_pvalues": {
+          "-4": 0.597855830387301,
+          "-3": 0.7928873003428638,
+          "-2": 0.42279061510299676,
+          "-1": 0.5668192986647852,
+          "1": 0.48061892056559175,
+          "2": 0.978981747719091,
+          "3": 0.32451991805558383,
+          "4": 0.8676445503167689
+        }
+      },
+      "test_15": {
+        "test": "15. Random Excursions Var (18 states)",
+        "p_value": 0.13100600132213083,
+        "median_p_value": 0.30356409643714427,
+        "passed_states": "18/18",
+        "pass": true,
+        "J": 2275,
+        "state_pvalues": {
+          "-9": 0.19428492103786588,
+          "-8": 0.2177437035296662,
+          "-7": 0.24625136970416805,
+          "-6": 0.2618857014825312,
+          "-5": 0.34524249139175733,
+          "-4": 0.40693971387078354,
+          "-3": 0.4110131594506323,
+          "-2": 0.4161464310923282,
+          "-1": 0.41485812014624135,
+          "1": 0.8355804977256875,
+          "2": 0.8172381514848632,
+          "3": 1.0,
+          "4": 0.4493806684255358,
+          "5": 0.2058478487495472,
+          "6": 0.1591254462698296,
+          "7": 0.1501224767698444,
+          "8": 0.15116655892961098,
+          "9": 0.13100600132213083
+        }
+      }
+    }
+  },
+  "excursions_full": {
+    "anu_qrng": {
+      "bits_evaluated": 17711104,
+      "test_14": {
+        "test": "14. Random Excursions (8 states)",
+        "p_value": null,
+        "pass": false,
+        "J": 249,
+        "note": "Insufficient cycles J < 500"
+      },
+      "test_15": {
+        "test": "15. Random Excursions Var (18 states)",
+        "p_value": null,
+        "pass": false,
+        "J": 249,
+        "note": "Insufficient cycles J < 500"
+      }
+    },
+    "ibmq_qrng": {
+      "bits_evaluated": 9427088,
+      "test_14": {
+        "test": "14. Random Excursions (8 states)",
+        "p_value": 0.09112381304517235,
+        "median_p_value": 0.7763083188527267,
+        "passed_states": "8/8",
+        "pass": true,
+        "J": 1743,
+        "state_pvalues": {
+          "-4": 0.78410496264079,
+          "-3": 0.7685116750646632,
+          "-2": 0.8997323882014081,
+          "-1": 0.09112381304517235,
+          "1": 0.46111240714485535,
+          "2": 0.5122125665987308,
+          "3": 0.9149499266411998,
+          "4": 0.8971111548776279
+        }
+      },
+      "test_15": {
+        "test": "15. Random Excursions Var (18 states)",
+        "p_value": 0.27093820312109307,
+        "median_p_value": 0.7540802637049435,
+        "passed_states": "18/18",
+        "pass": true,
+        "J": 1743,
+        "state_pvalues": {
+          "-9": 0.42074262234067794,
+          "-8": 0.6181071060786729,
+          "-7": 0.8731062090011538,
+          "-6": 0.8822684498740856,
+          "-5": 0.9954954355163734,
+          "-4": 0.9336761638568699,
+          "-3": 0.7446502073368801,
+          "-2": 0.5508457776453765,
+          "-1": 0.27093820312109307,
+          "1": 0.49810163241076966,
+          "2": 0.6248920528611583,
+          "3": 0.44425974951881186,
+          "4": 0.7635103200730069,
+          "5": 0.9594761421486321,
+          "6": 0.7866564950386652,
+          "7": 0.78527322767623,
+          "8": 0.8852535326013817,
+          "9": 0.7116029191776023
+        }
+      }
+    }
+  }
+}

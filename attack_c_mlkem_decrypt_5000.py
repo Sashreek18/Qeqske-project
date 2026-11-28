@@ -1009,6 +1009,7 @@ def run_mlkem_pipeline(
     seed: int = SEED,
     skip_tracemalloc: bool = False,
     tag: str | None = None,
+    qrng_path: str = "qrng_combined.txt",
 ):
     os.makedirs("results", exist_ok=True)
     t_all_0 = time.perf_counter()
@@ -1027,14 +1028,14 @@ def run_mlkem_pipeline(
     label = (
         f"Standard ML-KEM-{'512' if k_param == 2 else '768'} (kyber-py, n=256, k={k_param}, q=3329)"
         if variant == "standard"
-        else f"QEQSKE-Variant ML-KEM-{'512' if k_param == 2 else '768'} (QRNG, n=256, k={k_param}, per-key NTT q)"
+        else f"QEQSKE-Variant ML-KEM-{'512' if k_param == 2 else '768'} (QRNG={qrng_path}, n=256, k={k_param}, per-key NTT q)"
     )
     print("=" * 88)
     print(f"RUNNING: {label} | trials={n_trials}")
     print("=" * 88)
 
     trials, warmup_pool, stream_meta = pregenerate_mlkem_trials(
-        variant=variant, k_param=k_param, n_trials=n_trials, seed=seed
+        variant=variant, k_param=k_param, n_trials=n_trials, seed=seed, qrng_path=qrng_path
     )
     records, pass_timings = collect_mlkem_traces(
         trials, warmup_pool, seed=seed, skip_tracemalloc=skip_tracemalloc
